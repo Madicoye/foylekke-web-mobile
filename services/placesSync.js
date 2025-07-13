@@ -1,5 +1,5 @@
 const { Client } = require('@googlemaps/google-maps-services-js');
-const Restaurant = require('../models/Restaurant');
+const { Place, getModelByType, getGooglePlacesTypes, PLACE_TYPES } = require('../models/placeTypes');
 
 const client = new Client({});
 
@@ -21,7 +21,6 @@ const SENEGAL_REGIONS = {
   Diourbel: { lat: 14.6479, lng: -16.2436 }
 };
 
-const PLACE_TYPES = ['restaurant', 'food', 'cafe', 'meal_takeaway', 'bakery'];
 const SEARCH_RADIUS = 50000; // 50km
 
 class PlacesSyncService {
@@ -30,12 +29,58 @@ class PlacesSyncService {
     this.apiKey = apiKey;
   }
 
-  async findPlacesInRegion(region, coordinates, limit = null) {
-    const places = new Set();
+  // Get place types to search for based on target place type
+  getPlaceTypesToSearch(targetPlaceType = 'restaurant') {
+    const googlePlacesTypes = getGooglePlacesTypes();
+    return googlePlacesTypes[targetPlaceType] || ['restaurant', 'food', 'cafe', 'meal_takeaway', 'bakery'];
+  }
+
+  // Determine place type from Google Places data
+  determinePlaceType(placeDetails) {
+    const types = placeDetails.types || [];
     
-    for (const type of PLACE_TYPES) {
+    // Map Google Places types to our place types
+    if (types.includes('restaurant') || types.includes('food') || types.includes('meal_takeaway') || types.includes('bakery')) {
+      return 'restaurant';
+    }
+    if (types.includes('park') || types.includes('natural_feature')) {
+      return 'park';
+    }
+    if (types.includes('museum') || types.includes('art_gallery')) {
+      return 'museum';
+    }
+    if (types.includes('shopping_mall') || types.includes('store')) {
+      return 'shopping_center';
+    }
+    if (types.includes('lodging')) {
+      return 'hotel';
+    }
+    if (types.includes('cafe')) {
+      return 'cafe';
+    }
+    if (types.includes('bar')) {
+      return 'bar';
+    }
+    if (types.includes('amusement_park') || types.includes('movie_theater') || types.includes('bowling_alley')) {
+      return 'entertainment';
+    }
+    if (types.includes('church') || types.includes('mosque')) {
+      return 'cultural';
+    }
+    if (types.includes('gym') || types.includes('stadium')) {
+      return 'sports';
+    }
+    
+    return 'other';
+  }
+
+  async findPlacesInRegion(region, coordinates, limit = null, targetPlaceType = 'restaurant') {
+    const places = new Set();
+    const placeTypes = this.getPlaceTypesToSearch(targetPlaceType);
+    
+    for (const type of placeTypes) {
       try {
-        const response = await client.placesNearby({
+        const response = await this.client.placesNearby({
           params: {
             location: coordinates,
             radius: SEARCH_RADIUS,
@@ -62,7 +107,7 @@ class PlacesSyncService {
             // Wait for token to become valid
             await new Promise(resolve => setTimeout(resolve, 2000));
             
-            const nextResponse = await client.placesNearby({
+            const nextResponse = await this.client.placesNearby({
               params: {
                 pagetoken: pageToken,
                 key: this.apiKey
@@ -93,14 +138,14 @@ class PlacesSyncService {
 
   async getPlaceDetails(placeId) {
     try {
-      const response = await client.placeDetails({
+      const response = await this.client.placeDetails({
         params: {
           place_id: placeId,
           fields: [
             'name',
             'formatted_address',
             'geometry',
-            'type',
+            'types',
             'formatted_phone_number',
             'website',
             'rating',
@@ -116,15 +161,6 @@ class PlacesSyncService {
       });
 
       if (response.data.status === 'OK') {
-        // Debug photo information
-        console.log(`Photos for ${response.data.result.name}:`, 
-          response.data.result.photos ? 
-          response.data.result.photos.map(p => p.photo_reference).join('\n') : 
-          'No photos');
-        
-        // Debug price level information
-        console.log(`Price level for ${response.data.result.name}:`, response.data.result.price_level);
-        
         return response.data.result;
       } else {
         console.error(`Error fetching place details for ${placeId}:`, response.data.status);
@@ -165,12 +201,18 @@ class PlacesSyncService {
         return null;
       }
 
-      const existingRestaurant = await Restaurant.findOne({
+      // Determine the place type
+      const placeType = this.determinePlaceType(placeDetails);
+      const PlaceModel = getModelByType(placeType);
+
+      const existingPlace = await PlaceModel.findOne({
         googlePlaceId: placeDetails.place_id
       });
 
-      const restaurantData = {
+      // Base place data
+      const placeData = {
         name: placeDetails.name,
+        type: placeType,
         description: placeDetails.editorial_summary?.overview || `${placeDetails.name} in ${placeDetails.formatted_address}`,
         address: {
           street: placeDetails.formatted_address,
@@ -183,32 +225,78 @@ class PlacesSyncService {
             ]
           }
         },
-        phone: placeDetails.formatted_phone_number,
-        website: placeDetails.website,
-        rating: placeDetails.rating,
-        totalRatings: placeDetails.user_ratings_total,
-        priceRange: this.mapPriceLevel(placeDetails.price_level),
+        contact: {
+          phone: placeDetails.formatted_phone_number,
+          website: placeDetails.website
+        },
+        ratings: {
+          googleRating: placeDetails.rating,
+          appRating: 0,
+          reviewCount: placeDetails.user_ratings_total || 0
+        },
         images: await this.fetchPlacePhotos(placeDetails.photos),
         source: 'google_places',
-        verified: true,
+        isVerified: true,
         googlePlaceId: placeDetails.place_id
       };
 
-      if (existingRestaurant) {
-        console.log(`Updated existing restaurant: ${placeDetails.name}`);
-        return await Restaurant.findOneAndUpdate(
+      // Add type-specific data
+      if (placeType === 'restaurant') {
+        placeData.priceRange = this.mapPriceLevel(placeDetails.price_level);
+        placeData.cuisine = this.extractCuisineFromTypes(placeDetails.types);
+      } else if (placeType === 'park') {
+        placeData.typeSpecificData = {
+          size: 'medium',
+          parkType: 'urban',
+          entryFee: 0
+        };
+      } else if (placeType === 'museum') {
+        placeData.typeSpecificData = {
+          museumType: 'cultural',
+          admission: {
+            adult: 0,
+            child: 0,
+            student: 0,
+            senior: 0,
+            freeDays: []
+          }
+        };
+      }
+
+      if (existingPlace) {
+        console.log(`Updated existing ${placeType}: ${placeDetails.name}`);
+        return await PlaceModel.findOneAndUpdate(
           { googlePlaceId: placeDetails.place_id },
-          restaurantData,
+          placeData,
           { new: true }
         );
       } else {
-        console.log(`Created new restaurant: ${placeDetails.name}`);
-        return await Restaurant.create(restaurantData);
+        console.log(`Created new ${placeType}: ${placeDetails.name}`);
+        return await PlaceModel.create(placeData);
       }
     } catch (error) {
       console.error('Error syncing place to database:', error);
       return null;
     }
+  }
+
+  extractCuisineFromTypes(types) {
+    const cuisineMap = {
+      'restaurant': 'international',
+      'food': 'international',
+      'meal_takeaway': 'fast_food',
+      'bakery': 'bakery',
+      'cafe': 'cafe',
+      'bar': 'bar'
+    };
+    
+    for (const type of types) {
+      if (cuisineMap[type]) {
+        return [cuisineMap[type]];
+      }
+    }
+    
+    return ['international'];
   }
 
   determineRegion(location) {
@@ -248,108 +336,70 @@ class PlacesSyncService {
     return deg * (Math.PI / 180);
   }
 
-  formatOpeningHours(googleHours) {
-    if (!googleHours?.periods) return {};
-
-    const daysMap = {
-      0: 'sunday',
-      1: 'monday',
-      2: 'tuesday',
-      3: 'wednesday',
-      4: 'thursday',
-      5: 'friday',
-      6: 'saturday'
-    };
-
-    const formattedHours = {};
-    for (const period of googleHours.periods) {
-      if (period.open && period.close) {
-        const day = daysMap[period.open.day];
-        formattedHours[day] = {
-          open: `${period.open.time.slice(0, 2)}:${period.open.time.slice(2)}`,
-          close: `${period.close.time.slice(0, 2)}:${period.close.time.slice(2)}`
-        };
-      }
-    }
-
-    return formattedHours;
-  }
-
   async fetchPlacePhotos(photos) {
-    if (!photos || !Array.isArray(photos)) {
-      console.log('No photos available');
+    if (!photos || photos.length === 0) {
       return [];
     }
 
-    console.log(`Processing ${Math.min(photos.length, 5)} photos`);
-    const photoUrls = [];
-    
-    for (const photo of photos.slice(0, 5)) { // Limit to 5 photos
-      try {
-        if (!photo.photo_reference) {
-          console.log('Photo missing reference');
-          continue;
-        }
+    const imageUrls = [];
+    const maxPhotos = Math.min(photos.length, 5); // Limit to 5 photos
 
-        // Generate the photo URL using the photo reference
-        const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${photo.photo_reference}&key=${this.apiKey}`;
-        console.log('Generated photo URL:', photoUrl.substring(0, 100) + '...');
-        photoUrls.push(photoUrl);
+    for (let i = 0; i < maxPhotos; i++) {
+      try {
+        const photo = photos[i];
+        const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photo.photo_reference}&key=${this.apiKey}`;
+        imageUrls.push(photoUrl);
       } catch (error) {
-        console.error('Error generating photo URL:', error);
+        console.error('Error fetching photo:', error);
       }
     }
 
-    console.log(`Successfully generated ${photoUrls.length} photo URLs`);
-    return photoUrls;
+    return imageUrls;
   }
 
-  async syncRegion(region, limit = null) {
-    console.log(`Starting sync for region: ${region}${limit ? ` (limited to ${limit} places)` : ''}`);
-    const coordinates = SENEGAL_REGIONS[region];
+  async syncRegion(region, limit = null, placeType = 'restaurant') {
+    console.log(`Starting sync for ${placeType} places in ${region}`);
     
+    const coordinates = SENEGAL_REGIONS[region];
     if (!coordinates) {
       throw new Error(`Unknown region: ${region}`);
     }
 
-    const placeIds = await this.findPlacesInRegion(region, coordinates, limit);
-    console.log(`Found ${placeIds.length} places in ${region}`);
+    const placeIds = await this.findPlacesInRegion(region, coordinates, limit, placeType);
+    console.log(`Found ${placeIds.length} ${placeType} places in ${region}`);
 
-    const results = {
-      total: placeIds.length,
-      synced: 0,
-      failed: 0
-    };
+    let successCount = 0;
+    let errorCount = 0;
 
     for (const placeId of placeIds) {
-      const details = await this.getPlaceDetails(placeId);
-      if (details) {
-        const restaurant = await this.syncPlaceToDatabase(details);
-        if (restaurant) {
-          results.synced++;
-          console.log(`Synced ${restaurant.name} (${results.synced}/${placeIds.length})`);
-        } else {
-          results.failed++;
-          console.log(`Failed to sync place ${placeId}`);
+      try {
+        const placeDetails = await this.getPlaceDetails(placeId);
+        if (placeDetails) {
+          await this.syncPlaceToDatabase(placeDetails);
+          successCount++;
         }
-      } else {
-        results.failed++;
-        console.log(`Failed to get details for place ${placeId}`);
+      } catch (error) {
+        console.error(`Error syncing place ${placeId}:`, error);
+        errorCount++;
       }
     }
 
-    return results;
+    console.log(`Sync completed for ${region}: ${successCount} successful, ${errorCount} errors`);
+    return { successCount, errorCount };
   }
 
-  async syncAllRegions() {
-    const results = {};
+  async syncAllRegions(placeType = 'restaurant') {
+    console.log(`Starting full sync for ${placeType} places across all regions`);
     
     for (const region of Object.keys(SENEGAL_REGIONS)) {
-      console.log(`Starting sync for ${region}`);
-      results[region] = await this.syncRegion(region);
+      try {
+        await this.syncRegion(region, null, placeType);
+        // Add delay between regions to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (error) {
+        console.error(`Error syncing region ${region}:`, error);
+      }
     }
-
-    return results;
   }
 }
 

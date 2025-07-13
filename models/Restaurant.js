@@ -1,5 +1,22 @@
 const mongoose = require('mongoose');
 
+/**
+ * @deprecated This model is deprecated. Use the new Place system instead.
+ * 
+ * The new system supports multiple place types including restaurants, parks, museums, etc.
+ * 
+ * Migration steps:
+ * 1. Use the new Place model: require('../models/placeTypes').Place
+ * 2. For restaurants specifically: require('../models/placeTypes').Restaurant
+ * 3. Run migration script: npm run migrate-to-places
+ * 
+ * New API endpoints:
+ * - GET /api/places - Generic places API
+ * - GET /api/restaurants - Still works for backward compatibility
+ * 
+ * @see PLACES_MIGRATION.md for detailed migration guide
+ */
+
 const restaurantSchema = new mongoose.Schema({
   name: {
     type: String,

@@ -1,5 +1,6 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
+const { Place } = require('../models/placeTypes');
 const Restaurant = require('../models/Restaurant');
 const User = require('../models/User');
 const Review = require('../models/Review');
@@ -14,7 +15,14 @@ async function initializeDatabase() {
     // Create indexes
     console.log('Creating indexes...');
     
-    // Restaurant indexes
+    // Place indexes
+    await Place.collection.createIndex({ 'address.coordinates': '2dsphere' });
+    await Place.collection.createIndex({ googlePlaceId: 1 }, { sparse: true, unique: true });
+    await Place.collection.createIndex({ 'address.region': 1 });
+    await Place.collection.createIndex({ name: 'text', description: 'text' });
+    await Place.collection.createIndex({ type: 1 });
+    
+    // Restaurant indexes (for backward compatibility)
     await Restaurant.collection.createIndex({ 'address.coordinates': '2dsphere' });
     await Restaurant.collection.createIndex({ googlePlaceId: 1 }, { sparse: true, unique: true });
     await Restaurant.collection.createIndex({ 'address.region': 1 });
@@ -28,7 +36,8 @@ async function initializeDatabase() {
     await Review.collection.createIndex({ user: 1 });
     
     // Advertisement indexes
-    await Advertisement.collection.createIndex({ restaurant: 1 });
+    await Advertisement.collection.createIndex({ place: 1 });
+    await Advertisement.collection.createIndex({ restaurant: 1 }); // For backward compatibility
     await Advertisement.collection.createIndex({ status: 1 });
     await Advertisement.collection.createIndex({ targetRegions: 1 });
 

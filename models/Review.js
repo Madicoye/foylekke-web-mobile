@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
 const reviewSchema = new mongoose.Schema({
-  restaurant: {
+  place: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Restaurant',
+    ref: 'Place',
     required: true
   },
   user: {
@@ -40,14 +40,14 @@ const reviewSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Update restaurant rating when a review is added or modified
+// Update place rating when a review is added or modified
 reviewSchema.post('save', async function() {
-  const Restaurant = mongoose.model('Restaurant');
-  const restaurant = await Restaurant.findById(this.restaurant);
+  const Place = mongoose.model('Place');
+  const place = await Place.findById(this.place);
   
   const Review = this.constructor;
   const stats = await Review.aggregate([
-    { $match: { restaurant: this.restaurant } },
+    { $match: { place: this.place } },
     {
       $group: {
         _id: null,
@@ -58,9 +58,9 @@ reviewSchema.post('save', async function() {
   ]);
 
   if (stats.length > 0) {
-    restaurant.ratings.appRating = stats[0].avgRating;
-    restaurant.ratings.reviewCount = stats[0].count;
-    await restaurant.save();
+    place.ratings.appRating = stats[0].avgRating;
+    place.ratings.reviewCount = stats[0].count;
+    await place.save();
   }
 });
 

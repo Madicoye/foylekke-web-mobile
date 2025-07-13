@@ -4,10 +4,10 @@ const Review = require('../models/Review');
 const Restaurant = require('../models/Restaurant');
 const auth = require('../middleware/auth');
 
-// Get reviews for a restaurant
-router.get('/restaurant/:restaurantId', async (req, res) => {
+// Get reviews for a place
+router.get('/place/:placeId', async (req, res) => {
   try {
-    const reviews = await Review.find({ restaurant: req.params.restaurantId })
+    const reviews = await Review.find({ place: req.params.placeId })
       .populate('user', 'name profilePicture')
       .sort({ createdAt: -1 });
     res.json(reviews);
@@ -19,18 +19,19 @@ router.get('/restaurant/:restaurantId', async (req, res) => {
 // Create new review
 router.post('/', auth, async (req, res) => {
   try {
-    const restaurant = await Restaurant.findById(req.body.restaurant);
-    if (!restaurant) {
-      return res.status(404).json({ message: 'Restaurant not found' });
+    const Place = require('../models/Place');
+    const place = await Place.findById(req.body.place);
+    if (!place) {
+      return res.status(404).json({ message: 'Place not found' });
     }
 
     const existingReview = await Review.findOne({
-      restaurant: req.body.restaurant,
+      place: req.body.place,
       user: req.user._id
     });
 
     if (existingReview) {
-      return res.status(400).json({ message: 'You have already reviewed this restaurant' });
+      return res.status(400).json({ message: 'You have already reviewed this place' });
     }
 
     const review = new Review({
