@@ -12,17 +12,29 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
     lowercase: true,
-    trim: true
+    trim: true,
+    validate: {
+      validator: function(v) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      },
+      message: props => `${props.value} is not a valid email address!`
+    }
   },
   password: {
     type: String,
     required: true,
-    minlength: 6
+    minlength: 6,
+    select: false // Don't include password by default in queries
   },
   role: {
     type: String,
     enum: ['user', 'advertiser', 'admin'],
     default: 'user'
+  },
+  status: {
+    type: String,
+    enum: ['active', 'inactive', 'suspended'],
+    default: 'active'
   },
   profilePicture: {
     type: String,
@@ -40,7 +52,9 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Place'
   }],
-
+  // Password reset fields
+  resetToken: String,
+  resetTokenExpires: Date,
   // Advertiser-specific fields
   advertiserInfo: {
     companyName: String,
@@ -86,7 +100,7 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Place'
   }],
-  // New social features
+  // Social features
   friends: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
@@ -151,6 +165,8 @@ const userSchema = new mongoose.Schema({
 userSchema.index({ email: 1 });
 userSchema.index({ 'friendRequests.from': 1, 'friendRequests.status': 1 });
 userSchema.index({ friends: 1 });
+userSchema.index({ status: 1 });
+userSchema.index({ resetToken: 1, resetTokenExpires: 1 });
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {
@@ -167,7 +183,11 @@ userSchema.pre('save', async function(next) {
 
 // Method to compare password
 userSchema.methods.comparePassword = async function(candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
+  try {
+    return await bcrypt.compare(candidatePassword, this.password);
+  } catch (error) {
+    throw new Error('Password comparison failed');
+  }
 };
 
 // Method to send friend request
@@ -219,6 +239,16 @@ userSchema.methods.getMutualFriends = async function(otherUserId) {
   return this.friends.filter(friendId => 
     otherUser.friends.includes(friendId)
   );
+};
+
+// Static method to find active users
+userSchema.statics.findActiveUsers = function() {
+  return this.find({ status: 'active' });
+};
+
+// Static method to find users by role
+userSchema.statics.findByRole = function(role) {
+  return this.find({ role });
 };
 
 module.exports = mongoose.model('User', userSchema); 

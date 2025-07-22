@@ -6,11 +6,64 @@ const auth = require('../middleware/auth');
 const User = require('../models/User'); // Added for admin analytics
 const { uploadAd, handleUploadError, deleteFromCloudinary, extractPublicId } = require('../middleware/upload');
 
+// Default ads data for fallback
+const defaultAdsData = {
+  bannerAds: [
+    {
+      _id: 'default-banner-1',
+      type: 'banner',
+      title: 'Boost Your Restaurant\'s Visibility',
+      description: 'Reach more customers in Dakar! Advertise your restaurant here and get discovered by food lovers.',
+      image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+      ctaText: 'Advertise Here',
+      ctaUrl: '/advertiser/dashboard',
+      status: 'active',
+      placement: ['homepage_hero', 'homepage_between_sections', 'places_list'],
+      targetRegions: ['Dakar', 'Thiès', 'Saint-Louis', 'Ziguinchor'],
+      targetPlaceTypes: ['restaurant', 'hotel', 'attraction'],
+      isDefault: true,
+      priority: 1
+    },
+    {
+      _id: 'default-banner-2',
+      type: 'banner',
+      title: 'Promote Your Business Today',
+      description: 'Join hundreds of businesses already advertising on Foy Lekke. Increase your bookings and visibility.',
+      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+      ctaText: 'Get Started',
+      ctaUrl: '/advertiser/dashboard',
+      status: 'active',
+      placement: ['place_detail', 'search_results', 'places_list'],
+      targetRegions: ['Dakar', 'Thiès', 'Saint-Louis', 'Ziguinchor'],
+      targetPlaceTypes: ['restaurant', 'hotel', 'attraction'],
+      isDefault: true,
+      priority: 2
+    }
+  ],
+  nativeAds: [
+    {
+      _id: 'default-native-1',
+      type: 'native',
+      title: 'Grow Your Business with Foy Lekke Ads',
+      description: 'Reach thousands of potential customers searching for places like yours. Start advertising today and see immediate results.',
+      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80',
+      ctaText: 'Start Advertising',
+      ctaUrl: '/advertiser/dashboard',
+      status: 'active',
+      placement: ['homepage_between_sections', 'place_detail', 'search_results'],
+      targetRegions: ['Dakar', 'Thiès', 'Saint-Louis', 'Ziguinchor'],
+      targetPlaceTypes: ['restaurant', 'hotel', 'attraction'],
+      isDefault: true,
+      priority: 1
+    }
+  ]
+};
+
 // Get active ads for a specific placement and region
 router.get('/placement/:placement', async (req, res) => {
   try {
     const { placement } = req.params;
-    const { region, placeType, limit = 5 } = req.query;
+    const { region, placeType, limit = 5, includeDefault = 'true' } = req.query;
     
     const query = {
       placement,
@@ -38,11 +91,99 @@ router.get('/placement/:placement', async (req, res) => {
       .sort({ priority: -1, weight: -1, 'budget.amount': -1 })
       .limit(parseInt(limit));
     
-    // Track impressions for returned ads
+    // If no real ads found and default ads are requested, return default ads
+    if (ads.length === 0 && includeDefault === 'true') {
+      const allDefaultAds = [
+        ...defaultAdsData.bannerAds,
+        ...defaultAdsData.nativeAds
+      ];
+      
+      // Filter default ads by placement
+      let filteredDefaultAds = allDefaultAds.filter(ad => 
+        ad.placement.includes(placement)
+      );
+      
+      // Filter by region if specified
+      if (region) {
+        filteredDefaultAds = filteredDefaultAds.filter(ad => 
+          ad.targetRegions.includes(region)
+        );
+      }
+      
+      // Filter by place type if specified
+      if (placeType) {
+        filteredDefaultAds = filteredDefaultAds.filter(ad => 
+          ad.targetPlaceTypes.includes(placeType)
+        );
+      }
+      
+      // Sort by priority and limit
+      filteredDefaultAds.sort((a, b) => a.priority - b.priority);
+      const limitedDefaultAds = filteredDefaultAds.slice(0, parseInt(limit));
+      
+      return res.json(limitedDefaultAds);
+    }
+    
+    // Track impressions for returned real ads
     const impressionPromises = ads.map(ad => ad.trackImpression());
     await Promise.all(impressionPromises);
     
     res.json(ads);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get default ads specifically
+router.get('/default/:placement', async (req, res) => {
+  try {
+    const { placement } = req.params;
+    const { region, placeType, limit = 3 } = req.query;
+    
+    const allDefaultAds = [
+      ...defaultAdsData.bannerAds,
+      ...defaultAdsData.nativeAds
+    ];
+    
+    // Filter by placement
+    let filteredAds = allDefaultAds.filter(ad => 
+      ad.placement.includes(placement)
+    );
+    
+    // Filter by region if specified
+    if (region) {
+      filteredAds = filteredAds.filter(ad => 
+        ad.targetRegions.includes(region)
+      );
+    }
+    
+    // Filter by place type if specified
+    if (placeType) {
+      filteredAds = filteredAds.filter(ad => 
+        ad.targetPlaceTypes.includes(placeType)
+      );
+    }
+    
+    // Sort by priority and limit
+    filteredAds.sort((a, b) => a.priority - b.priority);
+    const result = filteredAds.slice(0, parseInt(limit));
+    
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Track default ad events
+router.post('/default/:adId/track', async (req, res) => {
+  try {
+    const { adId } = req.params;
+    const { eventType } = req.body;
+    
+    // Log default ad tracking (could be stored in analytics later)
+    console.log(`📊 Default ad tracking: ${eventType} for ad ${adId}`);
+    
+    res.json({ success: true, message: `${eventType} tracked for default ad ${adId}` });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -117,16 +258,16 @@ router.post('/', auth, async (req, res) => {
       const place = await Place.findById(adData.place);
       if (!place) {
         return res.status(404).json({ message: 'Place not found' });
-      }
-      
+    }
+
       if (place.owner && place.owner.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
         return res.status(403).json({ message: 'Not authorized to advertise this place' });
       }
     }
-    
+
     const ad = new Advertisement(adData);
     await ad.save();
-    
+
     await ad.populate('place', 'name description images address');
     await ad.populate('advertiser', 'name email');
     
@@ -199,25 +340,25 @@ router.patch('/:id/status', auth, async (req, res) => {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized' });
     }
-    
+
     const { status, rejectionReason } = req.body;
     
     if (!['draft', 'pending', 'active', 'paused', 'expired', 'rejected'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
     }
-    
+
     const ad = await Advertisement.findById(req.params.id);
     if (!ad) {
       return res.status(404).json({ message: 'Advertisement not found' });
     }
-    
+
     ad.status = status;
     if (status === 'rejected' && rejectionReason) {
       ad.rejectionReason = rejectionReason;
     }
     
     await ad.save();
-    
+
     await ad.populate('place', 'name description images address');
     await ad.populate('advertiser', 'name email');
     
@@ -234,9 +375,9 @@ router.post('/:id/click', async (req, res) => {
     if (!ad) {
       return res.status(404).json({ message: 'Advertisement not found' });
     }
-    
+
     await ad.trackClick();
-    
+
     res.json({ 
       clicks: ad.metrics.clicks,
       impressions: ad.metrics.impressions,
@@ -254,7 +395,7 @@ router.post('/:id/impression', async (req, res) => {
     if (!ad) {
       return res.status(404).json({ message: 'Advertisement not found' });
     }
-    
+
     await ad.trackImpression();
     
     res.json({ 
@@ -276,7 +417,7 @@ router.post('/:id/conversion', async (req, res) => {
     }
     
     await ad.trackConversion();
-    
+
     res.json({ 
       conversions: ad.metrics.conversions,
       clicks: ad.metrics.clicks,

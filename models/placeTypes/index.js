@@ -30,7 +30,7 @@ module.exports.PLACE_TYPES = {
 // Get model by place type
 module.exports.getModelByType = function(type) {
   const models = {
-    restaurant: Restaurant,
+    restaurant: Place, // Use new Place model for restaurants
     park: Park,
     museum: Museum,
     // Add other types as they are implemented
@@ -130,13 +130,25 @@ module.exports.isValidPlaceType = function(type) {
 // Get Google Places API types for each place type
 module.exports.getGooglePlacesTypes = function() {
   return {
-    restaurant: ['restaurant', 'food', 'meal_takeaway', 'bakery'],
+    restaurant: [
+      // Confirmed Google Places API types
+      'restaurant', 'food', 'meal_takeaway', 'bakery', 'cafe', 'bar',
+      'fast_food', 'pizza_restaurant', 'seafood_restaurant',
+      'chinese_restaurant', 'japanese_restaurant', 'indian_restaurant',
+      'italian_restaurant', 'mexican_restaurant', 'thai_restaurant',
+      'korean_restaurant', 'greek_restaurant', 'french_restaurant',
+      'spanish_restaurant', 'portuguese_restaurant', 'brazilian_restaurant',
+      'lebanese_restaurant', 'turkish_restaurant', 'american_restaurant',
+      'african_restaurant', 'caribbean_restaurant', 'mediterranean_restaurant',
+      'middle_eastern_restaurant', 'asian_restaurant', 'european_restaurant',
+      'latin_american_restaurant', 'fusion_restaurant'
+    ],
     park: ['park', 'natural_feature'],
     museum: ['museum', 'art_gallery'],
     shopping_center: ['shopping_mall', 'store'],
     hotel: ['lodging'],
     cafe: ['cafe'],
-    bar: ['bar'],
+    bar: ['bar', 'pub', 'night_club'],
     entertainment: ['amusement_park', 'movie_theater', 'bowling_alley'],
     cultural: ['museum', 'art_gallery', 'church', 'mosque'],
     sports: ['gym', 'stadium'],

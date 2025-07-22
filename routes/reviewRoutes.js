@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const Review = require('../models/Review');
-const Restaurant = require('../models/Restaurant');
 const auth = require('../middleware/auth');
 
 // Get reviews for a place

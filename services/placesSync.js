@@ -1,406 +1,303 @@
 const { Client } = require('@googlemaps/google-maps-services-js');
-const { Place, getModelByType, getGooglePlacesTypes, PLACE_TYPES } = require('../models/placeTypes');
+const { Place } = require('../models/placeTypes');
+const SearchTracker = require('../models/SearchTracker');
+const PlaceRaw = require('../models/PlaceRaw');
+const fs = require('fs');
+const path = require('path');
 
-const client = new Client({});
+// Constants
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+const REFRESH_INTERVAL = 30; // days
 
-// Senegal regions with their approximate centers
-const SENEGAL_REGIONS = {
-  Dakar: { lat: 14.7167, lng: -17.4677 },
-  Thiès: { lat: 14.7894, lng: -16.9253 },
-  'Saint-Louis': { lat: 16.0179, lng: -16.4896 },
-  Ziguinchor: { lat: 12.5598, lng: -16.2887 },
-  Kaolack: { lat: 14.1652, lng: -16.0726 },
-  Louga: { lat: 15.6173, lng: -16.2240 },
-  Fatick: { lat: 14.3390, lng: -16.4178 },
-  Kolda: { lat: 12.8983, lng: -14.9409 },
-  Matam: { lat: 15.6562, lng: -13.2558 },
-  Kaffrine: { lat: 14.1059, lng: -15.5456 },
-  Tambacounda: { lat: 13.7707, lng: -13.6673 },
-  Kédougou: { lat: 12.5605, lng: -12.1747 },
-  Sédhiou: { lat: 12.7081, lng: -15.5569 },
-  Diourbel: { lat: 14.6479, lng: -16.2436 }
-};
-
-const SEARCH_RADIUS = 50000; // 50km
+// All eatery types joined for single search
+const ALL_EATERY_TYPES = [
+  'restaurant', 'food', 'meal_takeaway', 'bakery', 'cafe', 'bar',
+  'fast_food', 'pizza_restaurant', 'seafood_restaurant',
+  'chinese_restaurant', 'japanese_restaurant', 'indian_restaurant',
+  'italian_restaurant', 'mexican_restaurant', 'thai_restaurant',
+  'korean_restaurant', 'greek_restaurant', 'french_restaurant',
+  'spanish_restaurant', 'portuguese_restaurant', 'brazilian_restaurant',
+  'lebanese_restaurant', 'turkish_restaurant', 'american_restaurant',
+  'african_restaurant', 'caribbean_restaurant', 'mediterranean_restaurant',
+  'middle_eastern_restaurant', 'asian_restaurant', 'european_restaurant',
+  'latin_american_restaurant', 'fusion_restaurant'
+].join('|');
 
 class PlacesSyncService {
   constructor(apiKey) {
-    this.client = new Client({});
     this.apiKey = apiKey;
-  }
-
-  // Get place types to search for based on target place type
-  getPlaceTypesToSearch(targetPlaceType = 'restaurant') {
-    const googlePlacesTypes = getGooglePlacesTypes();
-    return googlePlacesTypes[targetPlaceType] || ['restaurant', 'food', 'cafe', 'meal_takeaway', 'bakery'];
-  }
-
-  // Determine place type from Google Places data
-  determinePlaceType(placeDetails) {
-    const types = placeDetails.types || [];
+    this.client = new Client({});
     
-    // Map Google Places types to our place types
-    if (types.includes('restaurant') || types.includes('food') || types.includes('meal_takeaway') || types.includes('bakery')) {
-      return 'restaurant';
+    // Ensure logs directory exists
+    const logsDir = path.join(__dirname, '..', 'logs');
+    if (!fs.existsSync(logsDir)) {
+      fs.mkdirSync(logsDir, { recursive: true });
     }
-    if (types.includes('park') || types.includes('natural_feature')) {
-      return 'park';
-    }
-    if (types.includes('museum') || types.includes('art_gallery')) {
-      return 'museum';
-    }
-    if (types.includes('shopping_mall') || types.includes('store')) {
-      return 'shopping_center';
-    }
-    if (types.includes('lodging')) {
-      return 'hotel';
-    }
-    if (types.includes('cafe')) {
-      return 'cafe';
-    }
-    if (types.includes('bar')) {
-      return 'bar';
-    }
-    if (types.includes('amusement_park') || types.includes('movie_theater') || types.includes('bowling_alley')) {
-      return 'entertainment';
-    }
-    if (types.includes('church') || types.includes('mosque')) {
-      return 'cultural';
-    }
-    if (types.includes('gym') || types.includes('stadium')) {
-      return 'sports';
-    }
-    
-    return 'other';
   }
 
-  async findPlacesInRegion(region, coordinates, limit = null, targetPlaceType = 'restaurant') {
+  // Helper method for API calls with retries
+  async makeApiCall(method, retries = MAX_RETRIES) {
+    try {
+      return await method();
+    } catch (error) {
+      if (error.response) {
+        const status = error.response.status;
+        
+        // Handle rate limiting
+        if (status === 429 && retries > 0) {
+          console.log(`Rate limited, waiting ${RETRY_DELAY}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+          return this.makeApiCall(method, retries - 1);
+        }
+        
+        // Handle other status codes
+        if (status === 400) {
+          console.error('Invalid request:', error.response.data.error_message);
+        } else if (status === 403) {
+          console.error('API key issues:', error.response.data.error_message);
+        } else if (status === 500) {
+          console.error('Google Maps server error');
+        }
+      }
+      throw error;
+    }
+  }
+
+  async findPlacesAtPoint(point, limit = null) {
     const places = new Set();
-    const placeTypes = this.getPlaceTypesToSearch(targetPlaceType);
+    let apiCallCount = 0;
+    const RESULTS_PER_PAGE = 20;
+    const pointKey = `${point.lat},${point.lng}`;
     
-    for (const type of placeTypes) {
+    try {
+      // Check if we've recently searched this point
+      const recentSearch = await SearchTracker.findOne({
+        location: pointKey,
+        lastSearched: { 
+          $gte: new Date(Date.now() - REFRESH_INTERVAL * 24 * 60 * 60 * 1000)
+        }
+      });
+
+      if (recentSearch) {
+        recentSearch.placeIds.forEach(id => places.add(id));
+        console.log(`Found ${places.size} places from cache for point ${pointKey}`);
+        return Array.from(places);
+      }
+
+      console.log(`\n🔍 Searching around ${pointKey} (${point.radius}m radius)`);
+      
       try {
-        const response = await this.client.placesNearby({
-          params: {
-            location: coordinates,
-            radius: SEARCH_RADIUS,
-            type: type,
-            key: this.apiKey
-          }
-        });
+        apiCallCount++;
+        const response = await this.makeApiCall(
+          () => this.client.placesNearby({
+            params: {
+              location: { lat: point.lat, lng: point.lng },
+              radius: point.radius || 400,
+              type: ALL_EATERY_TYPES,
+              key: this.apiKey,
+              language: 'fr'
+            },
+            timeout: 5000
+          })
+        );
 
         if (response.data.results) {
+          const foundPlaces = [];
+          const initialResults = response.data.results.length;
+          console.log(`  Found ${initialResults} places`);
+          
           for (const place of response.data.results) {
-            places.add(place.place_id);
-            // Check if we've reached the limit
-            if (limit && places.size >= limit) {
-              console.log(`Reached limit of ${limit} places`);
-              return Array.from(places).slice(0, limit);
+            if (place.vicinity?.toLowerCase().includes('dakar')) {
+              places.add(place.place_id);
+              
+              // Save raw place data
+              await PlaceRaw.findOneAndUpdate(
+                { googlePlaceId: place.place_id },
+                {
+                  googlePlaceId: place.place_id,
+                  rawData: place,
+                  foundAt: pointKey,
+                  foundOn: new Date()
+                },
+                { upsert: true, new: true }
+              );
+              
+              // Map Google Places data to our Place model
+              const placeData = {
+                name: place.name,
+                description: `Discovered via Google Places API at ${pointKey}`,
+                type: this.mapGoogleType(place.types),
+                googlePlaceId: place.place_id,
+                source: 'google_places',
+                status: 'pending', // Needs verification
+                address: {
+                  street: place.vicinity,
+                  city: 'Dakar',
+                  region: 'Dakar',
+                  country: 'Senegal',
+                  coordinates: {
+                    lat: place.geometry.location.lat,
+                    lng: place.geometry.location.lng
+                  }
+                },
+                ratings: {
+                  googleRating: place.rating,
+                  reviewCount: place.user_ratings_total || 0,
+                  appRating: 0
+                }
+              };
+              
+              foundPlaces.push(placeData);
+              console.log(`    - ${place.name} (${place.place_id})`);
+              if (place.types) console.log(`      Types: ${place.types.join(', ')}`);
+              if (place.rating) console.log(`      Rating: ${place.rating} (${place.user_ratings_total} reviews)`);
             }
           }
-        }
 
-        // Only fetch next page if we haven't reached the limit
-        if (!limit || places.size < limit) {
-          let pageToken = response.data.next_page_token;
-          while (pageToken) {
-            // Wait for token to become valid
-            await new Promise(resolve => setTimeout(resolve, 2000));
+          // Get next page if available
+          if (initialResults === RESULTS_PER_PAGE && 
+              response.data.next_page_token &&
+              (!limit || places.size < limit)) {
             
-            const nextResponse = await this.client.placesNearby({
-              params: {
-                pagetoken: pageToken,
-                key: this.apiKey
-              }
-            });
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            apiCallCount++;
+            
+            const nextResponse = await this.makeApiCall(
+              () => this.client.placesNearby({
+                params: {
+                  pagetoken: response.data.next_page_token,
+                  key: this.apiKey
+                },
+                timeout: 5000
+              })
+            );
 
             if (nextResponse.data.results) {
               for (const place of nextResponse.data.results) {
-                places.add(place.place_id);
-                // Check if we've reached the limit
-                if (limit && places.size >= limit) {
-                  console.log(`Reached limit of ${limit} places`);
-                  return Array.from(places).slice(0, limit);
+                if (place.vicinity?.toLowerCase().includes('dakar')) {
+                  places.add(place.place_id);
+                  
+                  // Save raw place data
+                  await PlaceRaw.findOneAndUpdate(
+                    { googlePlaceId: place.place_id },
+                    {
+                      googlePlaceId: place.place_id,
+                      rawData: place,
+                      foundAt: pointKey,
+                      foundOn: new Date()
+                    },
+                    { upsert: true, new: true }
+                  );
+                  
+                  // Map Google Places data to our Place model
+                  const placeData = {
+                    name: place.name,
+                    description: `Discovered via Google Places API at ${pointKey}`,
+                    type: this.mapGoogleType(place.types),
+                    googlePlaceId: place.place_id,
+                    source: 'google_places',
+                    status: 'pending', // Needs verification
+                    address: {
+                      street: place.vicinity,
+                      city: 'Dakar',
+                      region: 'Dakar',
+                      country: 'Senegal',
+                      coordinates: {
+                        lat: place.geometry.location.lat,
+                        lng: place.geometry.location.lng
+                      }
+                    },
+                    ratings: {
+                      googleRating: place.rating,
+                      reviewCount: place.user_ratings_total || 0,
+                      appRating: 0
+                    }
+                  };
+                  
+                  foundPlaces.push(placeData);
+                  console.log(`    - ${place.name} (${place.place_id})`);
+                  if (place.types) console.log(`      Types: ${place.types.join(', ')}`);
+                  if (place.rating) console.log(`      Rating: ${place.rating} (${place.user_ratings_total} reviews)`);
                 }
               }
+              console.log(`  Found ${nextResponse.data.results.length} more places on page 2`);
+            }
+          }
+
+          if (foundPlaces.length > 0) {
+            // Save to SearchTracker
+            await SearchTracker.create({
+              location: pointKey,
+              radius: point.radius || 400,
+              searchTerms: ALL_EATERY_TYPES,
+              placeIds: Array.from(places),
+              lastSearched: new Date(),
+              refreshInterval: 30 // 30 days default
+            });
+
+            // Save places to DB
+            for (const placeData of foundPlaces) {
+              await Place.findOneAndUpdate(
+                { googlePlaceId: placeData.googlePlaceId },
+                placeData,
+                { upsert: true, new: true }
+              );
             }
 
-            pageToken = nextResponse.data.next_page_token;
+            // Show progress
+            const cost = (apiCallCount * 0.017).toFixed(2);
+            console.log(`  💰 Current cost: $${cost} USD (${apiCallCount} calls)`);
+            console.log(`  📊 Total unique places: ${places.size}`);
           }
         }
+
       } catch (error) {
-        console.error(`Error fetching ${type} places in ${region}:`, error);
+        console.error(`Error searching point ${pointKey}:`, error.message);
+        throw error;
       }
-    }
 
-    return limit ? Array.from(places).slice(0, limit) : Array.from(places);
-  }
-
-  async getPlaceDetails(placeId) {
-    try {
-      const response = await this.client.placeDetails({
-        params: {
-          place_id: placeId,
-          fields: [
-            'name',
-            'formatted_address',
-            'geometry',
-            'types',
-            'formatted_phone_number',
-            'website',
-            'rating',
-            'user_ratings_total',
-            'price_level',
-            'opening_hours',
-            'photos',
-            'reviews',
-            'place_id'
-          ],
-          key: this.apiKey
-        }
-      });
-
-      if (response.data.status === 'OK') {
-        return response.data.result;
-      } else {
-        console.error(`Error fetching place details for ${placeId}:`, response.data.status);
-        return null;
-      }
     } catch (error) {
-      console.error(`Error fetching details for place ${placeId}:`, error.response?.data || error.message);
-      return null;
+      console.error(`Error in findPlacesAtPoint:`, error);
+      throw error;
     }
+
+    return Array.from(places);
   }
 
-  mapPriceLevel(googlePriceLevel) {
-    // Google price levels:
-    // 0: Free
-    // 1: Inexpensive ($)
-    // 2: Moderate ($$)
-    // 3: Expensive ($$$)
-    // 4: Very Expensive ($$$$)
-    switch (googlePriceLevel) {
-      case 0:
-      case 1:
-        return 'low';      // $
-      case 2:
-        return 'medium';   // $$
-      case 3:
-        return 'high';     // $$$
-      case 4:
-        return 'high';     // $$$$
-      default:
-        return 'medium';   // If no price level is provided, assume medium
-    }
+  // Helper method to map Google Places types to our place types
+  mapGoogleType(types) {
+    if (!types || !Array.isArray(types)) return 'restaurant';
+
+    // Map Google Places types to our types
+    if (types.includes('bakery')) return 'bakery';
+    if (types.includes('bar')) return 'bar';
+    if (types.includes('cafe')) return 'coffee_shop';
+    if (types.includes('ice_cream')) return 'ice_cream_shop';
+    if (types.includes('meal_takeaway') && !types.includes('restaurant')) return 'restaurant';
+    
+    return 'restaurant'; // Default type
   }
 
-  async syncPlaceToDatabase(placeDetails) {
+  async syncPoint(point) {
     try {
-      if (!placeDetails.place_id) {
-        console.error('No place_id provided in place details');
-        return null;
-      }
-
-      // Determine the place type
-      const placeType = this.determinePlaceType(placeDetails);
-      const PlaceModel = getModelByType(placeType);
-
-      const existingPlace = await PlaceModel.findOne({
-        googlePlaceId: placeDetails.place_id
-      });
-
-      // Base place data
-      const placeData = {
-        name: placeDetails.name,
-        type: placeType,
-        description: placeDetails.editorial_summary?.overview || `${placeDetails.name} in ${placeDetails.formatted_address}`,
-        address: {
-          street: placeDetails.formatted_address,
-          region: this.determineRegion(placeDetails.geometry.location),
-          coordinates: {
-            type: 'Point',
-            coordinates: [
-              placeDetails.geometry.location.lng,
-              placeDetails.geometry.location.lat
-            ]
-          }
-        },
-        contact: {
-          phone: placeDetails.formatted_phone_number,
-          website: placeDetails.website
-        },
-        ratings: {
-          googleRating: placeDetails.rating,
-          appRating: 0,
-          reviewCount: placeDetails.user_ratings_total || 0
-        },
-        images: await this.fetchPlacePhotos(placeDetails.photos),
-        source: 'google_places',
-        isVerified: true,
-        googlePlaceId: placeDetails.place_id
+      console.log(`\n🔄 Starting sync for point ${point.lat},${point.lng}`);
+      
+      const placeIds = await this.findPlacesAtPoint(point);
+      
+      console.log(`\n📊 Point sync completed:`);
+      console.log(`📍 Total unique places found: ${placeIds.length}`);
+      
+      return {
+        point,
+        totalFound: placeIds.length,
+        placeIds
       };
-
-      // Add type-specific data
-      if (placeType === 'restaurant') {
-        placeData.priceRange = this.mapPriceLevel(placeDetails.price_level);
-        placeData.cuisine = this.extractCuisineFromTypes(placeDetails.types);
-      } else if (placeType === 'park') {
-        placeData.typeSpecificData = {
-          size: 'medium',
-          parkType: 'urban',
-          entryFee: 0
-        };
-      } else if (placeType === 'museum') {
-        placeData.typeSpecificData = {
-          museumType: 'cultural',
-          admission: {
-            adult: 0,
-            child: 0,
-            student: 0,
-            senior: 0,
-            freeDays: []
-          }
-        };
-      }
-
-      if (existingPlace) {
-        console.log(`Updated existing ${placeType}: ${placeDetails.name}`);
-        return await PlaceModel.findOneAndUpdate(
-          { googlePlaceId: placeDetails.place_id },
-          placeData,
-          { new: true }
-        );
-      } else {
-        console.log(`Created new ${placeType}: ${placeDetails.name}`);
-        return await PlaceModel.create(placeData);
-      }
     } catch (error) {
-      console.error('Error syncing place to database:', error);
-      return null;
-    }
-  }
-
-  extractCuisineFromTypes(types) {
-    const cuisineMap = {
-      'restaurant': 'international',
-      'food': 'international',
-      'meal_takeaway': 'fast_food',
-      'bakery': 'bakery',
-      'cafe': 'cafe',
-      'bar': 'bar'
-    };
-    
-    for (const type of types) {
-      if (cuisineMap[type]) {
-        return [cuisineMap[type]];
-      }
-    }
-    
-    return ['international'];
-  }
-
-  determineRegion(location) {
-    let nearestRegion = null;
-    let shortestDistance = Infinity;
-
-    for (const [region, coords] of Object.entries(SENEGAL_REGIONS)) {
-      const distance = this.calculateDistance(
-        location.lat,
-        location.lng,
-        coords.lat,
-        coords.lng
-      );
-
-      if (distance < shortestDistance) {
-        shortestDistance = distance;
-        nearestRegion = region;
-      }
-    }
-
-    return nearestRegion;
-  }
-
-  calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Earth's radius in km
-    const dLat = this.deg2rad(lat2 - lat1);
-    const dLon = this.deg2rad(lon2 - lon1);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  }
-
-  deg2rad(deg) {
-    return deg * (Math.PI / 180);
-  }
-
-  async fetchPlacePhotos(photos) {
-    if (!photos || photos.length === 0) {
-      return [];
-    }
-
-    const imageUrls = [];
-    const maxPhotos = Math.min(photos.length, 5); // Limit to 5 photos
-
-    for (let i = 0; i < maxPhotos; i++) {
-      try {
-        const photo = photos[i];
-        const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photo.photo_reference}&key=${this.apiKey}`;
-        imageUrls.push(photoUrl);
-      } catch (error) {
-        console.error('Error fetching photo:', error);
-      }
-    }
-
-    return imageUrls;
-  }
-
-  async syncRegion(region, limit = null, placeType = 'restaurant') {
-    console.log(`Starting sync for ${placeType} places in ${region}`);
-    
-    const coordinates = SENEGAL_REGIONS[region];
-    if (!coordinates) {
-      throw new Error(`Unknown region: ${region}`);
-    }
-
-    const placeIds = await this.findPlacesInRegion(region, coordinates, limit, placeType);
-    console.log(`Found ${placeIds.length} ${placeType} places in ${region}`);
-
-    let successCount = 0;
-    let errorCount = 0;
-
-    for (const placeId of placeIds) {
-      try {
-        const placeDetails = await this.getPlaceDetails(placeId);
-        if (placeDetails) {
-          await this.syncPlaceToDatabase(placeDetails);
-          successCount++;
-        }
-      } catch (error) {
-        console.error(`Error syncing place ${placeId}:`, error);
-        errorCount++;
-      }
-    }
-
-    console.log(`Sync completed for ${region}: ${successCount} successful, ${errorCount} errors`);
-    return { successCount, errorCount };
-  }
-
-  async syncAllRegions(placeType = 'restaurant') {
-    console.log(`Starting full sync for ${placeType} places across all regions`);
-    
-    for (const region of Object.keys(SENEGAL_REGIONS)) {
-      try {
-        await this.syncRegion(region, null, placeType);
-        // Add delay between regions to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } catch (error) {
-        console.error(`Error syncing region ${region}:`, error);
-      }
+      console.error(`Error syncing point ${point.lat},${point.lng}:`, error);
+      throw error;
     }
   }
 }
 
-module.exports = PlacesSyncService;
+module.exports = PlacesSyncService; 

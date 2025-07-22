@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunkfoy_lekke_frontend=self.webpackChunkfoy_lekke_frontend||[]).push([[638],{638:(e,k,n)=>{n.d(k,{Network:()=>t});const t=(0,n(403).F3)("Network",{web:()=>n.e(268).then(n.bind(n,268)).then(e=>new e.NetworkWeb)})}}]);
+//# sourceMappingURL=638.20a906ce.chunk.js.map

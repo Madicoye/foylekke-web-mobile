@@ -3,7 +3,7 @@ const router = express.Router();
 const { Place, getModelByType, getAvailableTypes, getTypeFeatures, PLACE_TYPES } = require('../models/placeTypes');
 const auth = require('../middleware/auth');
 const { Client } = require('@googlemaps/google-maps-services-js');
-const PlacesSyncService = require('../services/placesSync');
+const { PlacesSyncService } = require('../scripts/placesSync');
 
 const googleMapsClient = new Client({});
 const placesSyncService = new PlacesSyncService(process.env.GOOGLE_MAPS_API_KEY);

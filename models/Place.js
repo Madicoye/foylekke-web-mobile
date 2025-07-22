@@ -1,39 +1,38 @@
 const mongoose = require('mongoose');
 
-// Base place schema with common fields
 const placeSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    trim: true
-  },
-  type: {
-    type: String,
-    required: true,
-    enum: ['restaurant', 'park', 'museum', 'shopping_center', 'hotel', 'cafe', 'bar', 'entertainment', 'cultural', 'sports', 'other'],
-    default: 'other'
-  },
-  owner: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    index: true
   },
   description: {
     type: String,
     required: true
   },
+  type: {
+    type: String,
+    required: true,
+    enum: ['restaurant', 'bakery', 'bar', 'coffee_shop', 'ice_cream_shop', 'soup_kitchen'],
+    index: true
+  },
+  cuisine: [{
+    type: String,
+    index: true
+  }],
+  features: [{
+    type: String,
+    enum: ['wifi', 'parking', 'outdoor_seating', 'live_music', 'reservations', 'wheelchair_accessible', 'family_friendly', 'delivery', 'takeout'],
+    index: true
+  }],
   address: {
     street: String,
     city: String,
-    region: {
-      type: String,
-      required: true
-    },
+    region: String,
+    country: String,
     coordinates: {
-      type: {
-        type: String,
-        default: 'Point'
-      },
-      coordinates: [Number] // [longitude, latitude]
+      lat: Number,
+      lng: Number
     }
   },
   contact: {
@@ -41,128 +40,244 @@ const placeSchema = new mongoose.Schema({
     email: String,
     website: String
   },
-  images: [String],
-  openingHours: {
-    monday: { open: String, close: String },
-    tuesday: { open: String, close: String },
-    wednesday: { open: String, close: String },
-    thursday: { open: String, close: String },
-    friday: { open: String, close: String },
-    saturday: { open: String, close: String },
-    sunday: { open: String, close: String }
+  openingHours: [{
+    day: {
+      type: String,
+      enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    },
+    open: String,
+    close: String,
+    isClosed: Boolean
+  }],
+  priceRange: {
+    type: String,
+    enum: ['low', 'medium', 'high'],
+    index: true
   },
+  images: [{
+    url: String,
+    caption: String,
+    isDefault: Boolean
+  }],
   ratings: {
     googleRating: Number,
     appRating: {
       type: Number,
-      default: 0
+      default: 0,
+      index: true
     },
     reviewCount: {
       type: Number,
       default: 0
     }
   },
-  features: [String], // Generic features for all place types
-  isVerified: {
-    type: Boolean,
-    default: false
-  },
-  isSponsored: {
-    type: Boolean,
-    default: false
-  },
-  sponsorshipExpiry: Date,
-  googlePlaceId: {
-    type: String,
-    sparse: true,
-    unique: true
-  },
-  source: {
-    type: String,
-    enum: ['user', 'google_places', 'admin'],
-    default: 'user'
-  },
-  verificationStatus: {
-    type: String,
-    enum: ['pending', 'verified', 'rejected'],
-    default: 'pending'
-  },
-  submittedBy: {
+  owner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
-  
-  // Type-specific data (using mixed type for flexibility)
-  typeSpecificData: {
-    type: mongoose.Schema.Types.Mixed,
-    default: {}
+  isVerified: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+  status: {
+    type: String,
+    enum: ['active', 'inactive', 'pending', 'rejected'],
+    default: 'active',
+    index: true
+  },
+  source: {
+    type: String,
+    enum: ['google_places', 'manual', 'api'],
+    default: 'manual'
+  },
+  googlePlaceId: {
+    type: String,
+    unique: true,
+    sparse: true,
+    index: true
   }
 }, {
-  timestamps: true,
-  discriminatorKey: 'type' // This allows us to use inheritance
+  timestamps: true
 });
 
-// Index for geospatial queries
+// Text search indexes
+placeSchema.index({
+  name: 'text',
+  description: 'text',
+  'address.street': 'text',
+  'address.city': 'text',
+  'address.region': 'text',
+  cuisine: 'text'
+}, {
+  weights: {
+    name: 10,
+    cuisine: 5,
+    description: 3,
+    'address.street': 2,
+    'address.city': 2,
+    'address.region': 2
+  },
+  name: 'PlaceTextIndex'
+});
+
+// Compound indexes for common queries
+placeSchema.index({ type: 1, status: 1 });
+placeSchema.index({ cuisine: 1, status: 1 });
+placeSchema.index({ 'ratings.appRating': -1, status: 1 });
+placeSchema.index({ priceRange: 1, status: 1 });
+placeSchema.index({ 'address.region': 1, status: 1 });
+placeSchema.index({ features: 1, status: 1 });
+
+// Add geospatial index for coordinates
 placeSchema.index({ 'address.coordinates': '2dsphere' });
-// Index for Google Place ID lookups
-placeSchema.index({ googlePlaceId: 1 });
-// Index for place type filtering
-placeSchema.index({ type: 1 });
-// Index for region filtering
-placeSchema.index({ 'address.region': 1 });
-// Text search index
-placeSchema.index({ name: 'text', description: 'text' });
 
-// Virtual for checking if place is open now
-placeSchema.virtual('isOpenNow').get(function() {
-  const now = new Date();
-  const dayOfWeek = now.toLocaleLowerCase().slice(0, 3);
-  const currentTime = now.toTimeString().slice(0, 5);
-  
-  const todayHours = this.openingHours[dayOfWeek];
-  if (!todayHours || !todayHours.open || !todayHours.close) {
-    return false;
+// Add compound index for name and region
+placeSchema.index({ name: 1, 'address.region': 1 });
+
+// Add index for Google Place ID
+placeSchema.index({ googlePlaceId: 1 }, { unique: true });
+
+// Static method for advanced search
+placeSchema.statics.advancedSearch = async function(params) {
+  const {
+    query,
+    type,
+    cuisine,
+    region,
+    minRating,
+    maxRating,
+    priceRange,
+    features = [],
+    openNow,
+    hasDelivery,
+    hasTakeout,
+    page = 1,
+    limit = 20,
+    sortBy = 'relevance'
+  } = params;
+
+  // Build search query
+  const searchQuery = { status: 'active' };
+
+  // Text search
+  if (query) {
+    searchQuery.$text = { $search: query };
   }
-  
-  return currentTime >= todayHours.open && currentTime <= todayHours.close;
-});
 
-// Method to get place type display name
-placeSchema.methods.getTypeDisplayName = function() {
-  const typeNames = {
-    restaurant: 'Restaurant',
-    park: 'Park',
-    museum: 'Museum',
-    shopping_center: 'Shopping Center',
-    hotel: 'Hotel',
-    cafe: 'Café',
-    bar: 'Bar',
-    entertainment: 'Entertainment',
-    cultural: 'Cultural Site',
-    sports: 'Sports Venue',
-    other: 'Other'
-  };
+  // Type filter
+  if (type) {
+    searchQuery.type = type;
+  }
+
+  // Cuisine filter
+  if (cuisine) {
+    searchQuery.cuisine = { $in: Array.isArray(cuisine) ? cuisine : [cuisine] };
+  }
+
+  // Region filter
+  if (region) {
+    searchQuery['address.region'] = { $regex: region, $options: 'i' };
+  }
+
+  // Rating filter
+  if (minRating || maxRating) {
+    searchQuery['ratings.appRating'] = {};
+    if (minRating) searchQuery['ratings.appRating'].$gte = parseFloat(minRating);
+    if (maxRating) searchQuery['ratings.appRating'].$lte = parseFloat(maxRating);
+  }
+
+  // Price range filter
+  if (priceRange) {
+    searchQuery.priceRange = priceRange;
+  }
+
+  // Features filter
+  if (features.length > 0) {
+    searchQuery.features = { $all: features };
+  }
+
+  // Delivery/Takeout filters
+  if (hasDelivery) {
+    searchQuery.features = { ...searchQuery.features, $all: [...(searchQuery.features?.$all || []), 'delivery'] };
+  }
+  if (hasTakeout) {
+    searchQuery.features = { ...searchQuery.features, $all: [...(searchQuery.features?.$all || []), 'takeout'] };
+  }
+
+  // Build sort object
+  let sort = {};
+  switch (sortBy) {
+    case 'rating':
+      sort = { 'ratings.appRating': -1 };
+      break;
+    case 'name':
+      sort = { name: 1 };
+      break;
+    case 'price_low':
+      sort = { priceRange: 1 };
+      break;
+    case 'price_high':
+      sort = { priceRange: -1 };
+      break;
+    case 'relevance':
+    default:
+      if (query) {
+        sort = { score: { $meta: 'textScore' } };
+      } else {
+        sort = { 'ratings.appRating': -1 };
+      }
+  }
+
+  // Execute search with pagination
+  const skip = (page - 1) * limit;
   
-  return typeNames[this.type] || 'Other';
+  const [results, total] = await Promise.all([
+    this.find(
+      searchQuery,
+      query ? { score: { $meta: 'textScore' } } : null
+    )
+    .sort(sort)
+    .skip(skip)
+    .limit(limit)
+    .lean(),
+    this.countDocuments(searchQuery)
+  ]);
+
+  return {
+    results,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total,
+      pages: Math.ceil(total / limit)
+    }
+  };
 };
 
-// Method to get place-specific features
-placeSchema.methods.getTypeSpecificFeatures = function() {
-  const typeFeatures = {
-    restaurant: ['menu', 'cuisine', 'priceRange', 'delivery', 'takeout', 'reservations'],
-    park: ['playground', 'picnic_areas', 'walking_trails', 'sports_facilities', 'parking'],
-    museum: ['exhibitions', 'guided_tours', 'gift_shop', 'cafe', 'parking'],
-    shopping_center: ['stores', 'parking', 'food_court', 'entertainment', 'accessibility'],
-    hotel: ['rooms', 'amenities', 'pool', 'spa', 'restaurant', 'parking'],
-    cafe: ['menu', 'wifi', 'outdoor_seating', 'takeout', 'reservations'],
-    bar: ['drinks', 'live_music', 'outdoor_seating', 'parking'],
-    entertainment: ['activities', 'age_restrictions', 'parking', 'food_available'],
-    cultural: ['exhibitions', 'events', 'guided_tours', 'parking'],
-    sports: ['facilities', 'equipment_rental', 'lessons', 'parking'],
-    other: []
-  };
-  
-  return typeFeatures[this.type] || [];
+// Static method for search suggestions
+placeSchema.statics.getSuggestions = async function(query, limit = 5) {
+  if (!query || query.length < 2) return [];
+
+  const suggestions = await this.find(
+    {
+      $text: { $search: query },
+      status: 'active'
+    },
+    {
+      score: { $meta: 'textScore' },
+      name: 1,
+      type: 1,
+      cuisine: 1,
+      'address.city': 1,
+      'address.region': 1
+    }
+  )
+  .sort({ score: { $meta: 'textScore' } })
+  .limit(limit)
+  .lean();
+
+  return suggestions;
 };
 
 module.exports = mongoose.model('Place', placeSchema); 

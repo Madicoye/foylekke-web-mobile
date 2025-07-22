@@ -9,6 +9,7 @@
     "setup": "node setup.js",
     "sync-places": "node scripts/syncPlaces.js",
     "init-db": "node scripts/initDb.js",
+    "clean-duplicates": "node scripts/cleanDuplicates.js",
     "migrate-to-places": "node scripts/migrateToPlaces.js",
     "test": "jest"
   },
@@ -35,7 +36,8 @@
     "mongoose": "^7.0.3",
     "multer": "^1.4.5-lts.1",
     "multer-storage-cloudinary": "^4.0.0",
-    "node-cron": "^3.0.2"
+    "node-cron": "^3.0.2",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "jest": "^29.7.0",

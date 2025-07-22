@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const Place = require('../models/Place');
-const Restaurant = require('../models/Restaurant');
 const User = require('../models/User');
 const Hangout = require('../models/Hangout');
 const Review = require('../models/Review');
@@ -23,21 +22,6 @@ async function checkDatabase() {
       console.log('Sample places:');
       places.forEach(place => {
         console.log(`  - ${place.name} (${place.type})`);
-      });
-    }
-
-    // Check Restaurants (legacy)
-    const restaurantCount = await Restaurant.countDocuments();
-    console.log(`\n🍽️  Restaurants (legacy): ${restaurantCount}`);
-    if (restaurantCount > 0) {
-      const restaurants = await Restaurant.find().limit(5);
-      console.log('Sample restaurants:');
-      restaurants.forEach(restaurant => {
-        console.log(`  - ${restaurant.name}`);
-        console.log(`    Address: ${restaurant.address?.street || 'N/A'}, ${restaurant.address?.city || 'N/A'}`);
-        console.log(`    Rating: ${restaurant.rating || 'N/A'}`);
-        console.log(`    Cuisine: ${restaurant.cuisine?.join(', ') || 'N/A'}`);
-        console.log('');
       });
     }
 
@@ -73,8 +57,8 @@ async function checkDatabase() {
 
     // Summary
     console.log('\n📊 Database Summary:');
-    console.log(`Total documents: ${placeCount + restaurantCount + userCount + hangoutCount + reviewCount + adCount}`);
-    console.log(`Collections with data: ${[placeCount, restaurantCount, userCount, hangoutCount, reviewCount, adCount].filter(count => count > 0).length}/6`);
+    console.log(`Total documents: ${placeCount + userCount + hangoutCount + reviewCount + adCount}`);
+    console.log(`Collections with data: ${[placeCount, userCount, hangoutCount, reviewCount, adCount].filter(count => count > 0).length}/5`);
 
   } catch (error) {
     console.error('Error checking database:', error);

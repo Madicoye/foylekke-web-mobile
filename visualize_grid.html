@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dakar Grid Coverage</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        #map { 
+            height: 800px; 
+            width: 100%; 
+        }
+        .info {
+            padding: 6px 8px;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            background: white;
+            background: rgba(255,255,255,0.8);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        // Initialize the map
+        const map = L.map('map').setView([14.7, -17.425], 12);
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Add the grid points from our JSON
+        fetch('grid_points.json')
+            .then(response => response.json())
+            .then(points => {
+                points.forEach(point => {
+                    // Add circle for coverage area
+                    L.circle([point.lat, point.lng], {
+                        color: 'red',
+                        fillColor: '#f03',
+                        fillOpacity: 0.1,
+                        radius: point.radius
+                    }).addTo(map);
+                    
+                    // Add marker for the point
+                    L.circleMarker([point.lat, point.lng], {
+                        radius: 3,
+                        fillColor: '#f03',
+                        color: '#f03',
+                        weight: 1,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    }).addTo(map);
+                });
+
+                // Add info box
+                const info = L.control();
+                info.onAdd = function() {
+                    this._div = L.DomUtil.create('div', 'info');
+                    this._div.innerHTML = `
+                        <h4>Grid Coverage</h4>
+                        <b>Total Points:</b> ${points.length}<br>
+                        <b>Grid Spacing:</b> 400m<br>
+                        <b>Search Radius:</b> 400m
+                    `;
+                    return this._div;
+                };
+                info.addTo(map);
+            });
+    </script>
+</body>
+</html> 
