@@ -1,20 +1,32 @@
-# Foy Lekke Frontend
+# Foy Lekke - Full Stack Application
 
-A modern React-based frontend for the Foy Lekke multi-type place discovery application.
+A comprehensive full-stack application for Foy Lekke, a multi-type place discovery platform for Senegal. This repository contains both the frontend React application and the backend Node.js API.
 
-## Features
+## 🚀 Features
 
+### Frontend Features
 - 🏠 **Beautiful Homepage** - Hero section, featured places, and category exploration
 - 🔍 **Advanced Search** - Search modal with filters for place type, region, and rating
 - 📍 **Place Discovery** - Browse and filter places by type (restaurants, parks, museums, etc.)
 - 🎨 **Modern UI** - Responsive design with Tailwind CSS and Framer Motion animations
 - 🔐 **User Authentication** - Login, registration, and profile management
 - ❤️ **Favorites System** - Save and manage your favorite places
-- 📱 **Mobile Responsive** - Optimized for all device sizes
+- 📱 **Mobile Responsive** - Optimized for all device sizes with Capacitor
 - ⚡ **Performance** - React Query for efficient data fetching and caching
 
-## Tech Stack
+### Backend Features
+- 🍽️ **Restaurant Management**: CRUD operations for restaurants with rich data models
+- 🔐 **Authentication**: JWT-based user authentication and authorization
+- 📍 **Google Places Integration**: Sync restaurant data from Google Places API
+- 🌍 **Geospatial Queries**: Location-based restaurant search and filtering
+- ⭐ **Review System**: Restaurant reviews and ratings
+- 📢 **Advertisement System**: Sponsored restaurant listings
+- 🖼️ **Image Management**: Restaurant photo handling with Cloudinary
+- 📊 **Analytics**: Restaurant statistics and performance metrics
 
+## 🛠️ Tech Stack
+
+### Frontend
 - **React 18** - Modern React with hooks
 - **React Router** - Client-side routing
 - **React Query** - Data fetching and caching
@@ -22,104 +34,229 @@ A modern React-based frontend for the Foy Lekke multi-type place discovery appli
 - **Framer Motion** - Animation library
 - **Lucide React** - Icon library
 - **Axios** - HTTP client
+- **Capacitor** - Cross-platform mobile development
 
-## Getting Started
+### Backend
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: MongoDB with Mongoose ODM
+- **Authentication**: JWT (JSON Web Tokens)
+- **External APIs**: Google Places API, Google Maps API
+- **File Upload**: Multer + Cloudinary
+- **Validation**: Built-in Express validation
 
-### Prerequisites
+## 📋 Prerequisites
 
-- Node.js 16+ 
+- Node.js (>= 16.0.0)
 - npm or yarn
-- Backend API running on `http://localhost:9999`
+- MongoDB (local or cloud instance)
+- Google Maps API Key
 
-### Installation
+## 🚀 Getting Started
 
-1. Navigate to the frontend directory:
+### 1. Clone the Repository
 ```bash
-cd frontend
+git clone https://github.com/Madicoye/foylekke-web-mobile.git
+cd foy-lekke-web-mobile
 ```
 
-2. Install dependencies:
+### 2. Install Dependencies
 ```bash
+# Install all dependencies
 npm install
 ```
 
-3. Start the development server:
-```bash
-npm start
-```
+### 3. Environment Setup
 
-The app will be available at `http://localhost:3000`
-
-### Environment Variables
-
-Create a `.env` file in the frontend directory:
+Create a `.env` file in the root directory:
 
 ```env
+# Server Configuration
+PORT=9999
+NODE_ENV=development
+
+# Database
+MONGODB_URI=mongodb://localhost:27017/foy-lekke
+
+# JWT Secret
+JWT_SECRET=your_jwt_secret_here
+
+# Google APIs
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
+
+# Cloudinary (for image uploads)
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+
+# Frontend API URL
 REACT_APP_API_URL=http://localhost:9999
 ```
 
-## Project Structure
-
-```
-src/
-├── components/          # Reusable UI components
-│   ├── layout/         # Layout components (Navbar, Footer)
-│   ├── places/         # Place-related components
-│   └── search/         # Search components
-├── contexts/           # React contexts (Auth)
-├── pages/              # Page components
-├── services/           # API services
-└── index.css          # Global styles
+### 4. Initialize Database
+```bash
+npm run init-db
 ```
 
-## Available Scripts
+### 5. Start Development Servers
 
-- `npm start` - Start development server
-- `npm build` - Build for production
+#### Backend Development
+```bash
+npm run server:dev
+```
+
+#### Frontend Development
+```bash
+npm run client:dev
+```
+
+#### Both Frontend and Backend (Recommended)
+```bash
+npm run dev
+```
+
+The frontend will be available at `http://localhost:3000` and the backend API at `http://localhost:9999`.
+
+## 📁 Project Structure
+
+```
+├── src/                    # Frontend React application
+│   ├── components/         # Reusable UI components
+│   ├── pages/             # Page components
+│   ├── services/          # API services
+│   └── contexts/          # React contexts
+├── routes/                # Backend API routes
+├── models/                # Database models
+├── middleware/            # Express middleware
+├── services/              # Backend services
+├── scripts/               # Database and sync scripts
+└── android/ & ios/        # Mobile app builds
+```
+
+## 🔧 Available Scripts
+
+### Backend Scripts
+- `npm run server:dev` - Start development server with nodemon
+- `npm run server` - Start production server
+- `npm run sync-places` - Sync places from Google Places API
+- `npm run init-db` - Initialize database
 - `npm test` - Run tests
-- `npm eject` - Eject from Create React App
 
-## Features Overview
+### Frontend Scripts
+- `npm run client:dev` - Start development server
+- `npm run build` - Build for production
+- `npm test` - Run tests
+- `npm run cap:sync` - Sync with Capacitor
+- `npm run cap:open:ios` - Open iOS project
+- `npm run cap:open:android` - Open Android project
 
-### Homepage
-- Hero section with call-to-action
-- Featured places showcase
-- Place type categories
-- Statistics and social proof
+### Combined Scripts
+- `npm run dev` - Start both frontend and backend in development mode
 
-### Places Page
-- Advanced filtering by type, region, rating, and price
-- Grid and list view modes
-- Pagination
-- Search functionality
-- Sort options
+## 🌐 API Endpoints
 
-### Search Modal
-- Full-text search
-- Place type selection with icons
-- Region filtering
-- Rating filters
-- Quick search suggestions
+### Authentication
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `GET /api/auth/me` - Get current user profile
 
-### User Features
-- Authentication (login/register)
-- Profile management
-- Favorite places
-- Social hangouts (coming soon)
+### Places/Restaurants
+- `GET /api/places` - Get all places (with filtering)
+- `GET /api/places/:id` - Get single place
+- `POST /api/places` - Create new place (authenticated)
+- `PUT /api/places/:id` - Update place (authenticated)
+- `DELETE /api/places/:id` - Delete place (authenticated)
 
-## API Integration
+### Reviews
+- `GET /api/reviews` - Get reviews
+- `POST /api/reviews` - Create review (authenticated)
+- `PUT /api/reviews/:id` - Update review (authenticated)
+- `DELETE /api/reviews/:id` - Delete review (authenticated)
 
-The frontend integrates with the backend API through the `services/api.js` file, which includes:
+### Advertisements
+- `GET /api/ads` - Get advertisements
+- `POST /api/ads` - Create advertisement (authenticated)
+- `PUT /api/ads/:id` - Update advertisement (authenticated)
+- `DELETE /api/ads/:id` - Delete advertisement (authenticated)
 
-- Places API (CRUD operations, filtering, search)
-- Authentication API (login, register, profile)
-- Reviews API
-- Hangouts API
-- Advertisements API
+## 🔍 Query Parameters
 
-## Styling
+### Place Filtering
+- `type` - Filter by place type (restaurant, park, museum, etc.)
+- `region` - Filter by region
+- `cuisine` - Filter by cuisine type(s)
+- `priceRange` - Filter by price range (low, medium, high)
+- `rating` - Filter by minimum rating
+- `features` - Filter by features (delivery, takeout, etc.)
+- `search` - Text search in name, description, or menu items
+- `lat`, `lng`, `radius` - Location-based search
+- `sort` - Sort by rating, reviews, name, or date
 
-The app uses Tailwind CSS with custom configuration:
+## 🗄️ Database Models
+
+### Place Schema
+- Basic info (name, description, address)
+- Contact details (phone, email, website)
+- Menu items with categories and prices
+- Images and opening hours
+- Ratings (Google + app ratings)
+- Features and cuisine types
+- Verification and sponsorship status
+- Google Place ID for external sync
+
+### User Schema
+- Authentication details
+- Profile information
+- Role-based permissions
+
+### Review Schema
+- Place association
+- User reviews and ratings
+- Timestamps and moderation
+
+### Advertisement Schema
+- Sponsored content management
+- Expiry dates and targeting
+
+## 🔄 Google Places Integration
+
+The backend includes a comprehensive Places Sync Service that:
+
+1. **Fetches places** from Google Places API by region
+2. **Processes place details** including photos, ratings, and hours
+3. **Maps data** to our place schema
+4. **Syncs to database** with duplicate prevention
+5. **Handles pagination** for large datasets
+
+### Supported Regions
+- Dakar, Thiès, Saint-Louis, Ziguinchor
+- Kaolack, Louga, Fatick, Kolda
+- Matam, Kaffrine, Tambacounda
+- Kédougou, Sédhiou, Diourbel
+
+## 📱 Mobile Development
+
+This project uses Capacitor for cross-platform mobile development:
+
+```bash
+# Initialize Capacitor
+npm run cap:init
+
+# Add platforms
+npm run cap:add:ios
+npm run cap:add:android
+
+# Sync changes
+npm run cap:sync
+
+# Open in native IDEs
+npm run cap:open:ios
+npm run cap:open:android
+```
+
+## 🎨 Styling
+
+The frontend uses Tailwind CSS with custom configuration:
 
 - **Primary Colors**: Orange theme (#ed7519)
 - **Secondary Colors**: Blue accent (#0ea5e9)
@@ -127,50 +264,52 @@ The app uses Tailwind CSS with custom configuration:
 - **Custom Components**: Pre-built component classes
 - **Responsive Design**: Mobile-first approach
 
-## Contributing
+## 🔒 Security Features
 
-1. Follow the existing code style
-2. Use TypeScript for new components (optional)
-3. Add proper error handling
-4. Test on multiple devices
-5. Update documentation
+- JWT token authentication
+- Password hashing with bcrypt
+- CORS configuration
+- Input validation and sanitization
+- Rate limiting (can be added)
+- Environment variable protection
 
-## Deployment
-
-### Build for Production
+## 🧪 Testing
 
 ```bash
-npm run build
+# Backend tests
+npm test
+
+# Frontend tests
+npm test
 ```
 
-### Deploy to Netlify/Vercel
+## 🚀 Deployment
 
-1. Connect your repository
-2. Set build command: `npm run build`
-3. Set publish directory: `build`
-4. Add environment variables
+### Environment Variables for Production
+- Set `NODE_ENV=production`
+- Use production MongoDB URI
+- Configure proper JWT secret
+- Set up Cloudinary credentials
+- Configure CORS origins
 
-## Browser Support
+### Recommended Hosting
+- **Backend**: Heroku, Railway, or DigitalOcean
+- **Frontend**: Netlify, Vercel, or AWS S3
+- **Database**: MongoDB Atlas
+- **File Storage**: Cloudinary
 
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
+## 🤝 Contributing
 
-## Performance
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
-- Code splitting with React.lazy()
-- Image optimization
-- Efficient data fetching with React Query
-- Optimized bundle size
-- Lazy loading for better performance
+## 📄 License
 
-## Future Enhancements
+MIT License - see LICENSE file for details
 
-- [ ] Interactive maps with Mapbox
-- [ ] Real-time notifications
-- [ ] Social features (following, sharing)
-- [ ] Advanced analytics
-- [ ] PWA capabilities
-- [ ] Offline support
-- [ ] Multi-language support 
+## 🆘 Support
+
+For support and questions, please open an issue in the repository.
