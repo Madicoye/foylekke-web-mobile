@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const PlacesSyncService = require('../scripts/placesSync');
+const PlacesSyncService = require('./placesSync');
 const { Place } = require('../models/placeTypes');
 
 class ScheduledSyncService {

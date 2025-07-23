@@ -1,2 +1,0 @@
-"use strict";(self.webpackChunkfoy_lekke_frontend=self.webpackChunkfoy_lekke_frontend||[]).push([[358],{358:(e,n,f)=>{f.d(n,{Preferences:()=>r});const r=(0,f(403).F3)("Preferences",{web:()=>f.e(828).then(f.bind(f,828)).then(e=>new e.PreferencesWeb)})}}]);
-//# sourceMappingURL=358.030eb10b.chunk.js.map
