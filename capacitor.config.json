@@ -1,0 +1,66 @@
+{
+  "appId": "com.foylekke.app",
+  "appName": "Foy Lekke",
+  "webDir": "build",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": [
+        "badge",
+        "sound",
+        "alert"
+      ]
+    },
+    "Geolocation": {
+      "permissions": {
+        "ios": [
+          "location-when-in-use"
+        ],
+        "android": [
+          "android.permission.ACCESS_COARSE_LOCATION",
+          "android.permission.ACCESS_FINE_LOCATION"
+        ]
+      }
+    },
+    "Camera": {
+      "permissions": {
+        "ios": [
+          "camera",
+          "photos"
+        ],
+        "android": [
+          "android.permission.CAMERA"
+        ]
+      }
+    }
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "preferredContentMode": "mobile",
+    "backgroundColor": "#ffffff",
+    "scheme": "foylekke",
+    "appendUserAgent": "Foy Lekke iOS App",
+    "limitsNavigationsToAppBoundDomains": false,
+    "minVersion": "12.0",
+    "cordovaSwiftVersion": "5.0",
+    "webviewOnly": false
+  },
+  "android": {
+    "backgroundColor": "#ffffff",
+    "allowMixedContent": true,
+    "appendUserAgent": "Foy Lekke Android App"
+  },
+  "server": {
+    "hostname": "localhost",
+    "androidScheme": "http",
+    "iosScheme": "http",
+    "allowNavigation": [
+      "localhost",
+      "localhost:*",
+      "192.168.*",
+      "10.0.2.2",
+      "*.foylekke.com"
+    ],
+    "cleartext": true
+  }
+}
