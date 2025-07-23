@@ -14,6 +14,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import StarRating from '../ui/StarRating';
 import { getPlaceTypeConfig } from '../../config/placeTypes';
+import { getImageUrls } from '../../utils/imageUtils';
 
 const PlaceCard = ({ place, viewMode = 'grid' }) => {
   const { user, toggleFavorite } = useAuth();
@@ -38,6 +39,8 @@ const PlaceCard = ({ place, viewMode = 'grid' }) => {
     };
     return colorMap[config.color] || 'bg-gray-100 text-gray-800';
   };
+
+  const imageUrls = getImageUrls(place);
 
   const handleFavoriteClick = (e) => {
     e.preventDefault();
@@ -93,9 +96,9 @@ const PlaceCard = ({ place, viewMode = 'grid' }) => {
             <div className="flex">
               {/* Image Section - List View */}
               <div className="relative w-48 h-32 overflow-hidden flex-shrink-0">
-                {place.images && place.images.length > 0 ? (
+                {imageUrls && imageUrls.length > 0 ? (
                   <img
-                    src={place.images[0]}
+                    src={imageUrls[0]}
                     alt={place.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => {
@@ -106,7 +109,7 @@ const PlaceCard = ({ place, viewMode = 'grid' }) => {
                 ) : null}
                 
                 <div 
-                  className={`w-full h-full bg-gradient-to-br ${defaultImg.gradient} flex items-center justify-center ${place.images && place.images.length > 0 ? 'hidden' : 'flex'}`}
+                  className={`w-full h-full bg-gradient-to-br ${defaultImg.gradient} flex items-center justify-center ${imageUrls && imageUrls.length > 0 ? 'hidden' : 'flex'}`}
                 >
                   <span className="text-2xl">{defaultImg.icon}</span>
                 </div>
@@ -207,9 +210,9 @@ const PlaceCard = ({ place, viewMode = 'grid' }) => {
         <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 overflow-hidden border border-gray-100 h-full flex flex-col">
           {/* Image Section - Fixed Height */}
           <div className="relative h-48 overflow-hidden flex-shrink-0">
-            {place.images && place.images.length > 0 ? (
+            {imageUrls && imageUrls.length > 0 ? (
               <img
-                src={place.images[0]}
+                src={imageUrls[0]}
                 alt={place.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 onError={(e) => {
@@ -221,7 +224,7 @@ const PlaceCard = ({ place, viewMode = 'grid' }) => {
             
             {/* Default Image Placeholder */}
             <div 
-              className={`w-full h-full bg-gradient-to-br ${defaultImg.gradient} flex items-center justify-center ${place.images && place.images.length > 0 ? 'hidden' : 'flex'}`}
+              className={`w-full h-full bg-gradient-to-br ${defaultImg.gradient} flex items-center justify-center ${imageUrls && imageUrls.length > 0 ? 'hidden' : 'flex'}`}
             >
               <span className="text-4xl">{defaultImg.icon}</span>
             </div>

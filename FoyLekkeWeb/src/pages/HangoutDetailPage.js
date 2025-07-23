@@ -33,6 +33,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import { getCuisineTypeConfig } from '../config/cuisineTypes';
 import { getPlaceTypeConfig } from '../config/placeTypes';
+import { getImageUrls } from '../utils/imageUtils';
 
 const HangoutDetailPage = () => {
   const { id } = useParams();
@@ -415,21 +416,24 @@ const HangoutDetailPage = () => {
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">About the Place</h3>
                   
-                  {hangout.place.images && hangout.place.images.length > 0 ? (
-                    <div className="mb-4">
-                      <img
-                        src={hangout.place.images[0]}
-                        alt={hangout.place.name}
-                        className="w-full h-32 object-cover rounded-lg"
-                      />
-                    </div>
-                  ) : (
-                    <div className={`mb-4 w-full h-32 bg-gradient-to-br ${defaultImg?.gradient} rounded-lg flex items-center justify-center`}>
-                      <div className="text-center">
-                        <div className="text-3xl">{defaultImg?.icon}</div>
+                  {(() => {
+                    const imageUrls = getImageUrls(hangout.place);
+                    return imageUrls.length > 0 ? (
+                      <div className="mb-4">
+                        <img
+                          src={imageUrls[0]}
+                          alt={hangout.place.name}
+                          className="w-full h-32 object-cover rounded-lg"
+                        />
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <div className={`mb-4 w-full h-32 bg-gradient-to-br ${defaultImg?.gradient} rounded-lg flex items-center justify-center`}>
+                        <div className="text-center">
+                          <div className="text-3xl">{defaultImg?.icon}</div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">

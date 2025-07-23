@@ -34,6 +34,7 @@ import AdManager from '../components/ads/AdManager';
 import PlaceCard from '../components/places/PlaceCard';
 import { getCuisineTypeConfig } from '../config/cuisineTypes';
 import { getPlaceTypeConfig } from '../config/placeTypes';
+import { getImageUrls } from '../utils/imageUtils';
 import { toast } from 'react-hot-toast';
 
 const PlaceDetailPage = () => {
@@ -154,6 +155,8 @@ const PlaceDetailPage = () => {
     };
   };
 
+  const imageUrls = getImageUrls(place);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -213,11 +216,11 @@ const PlaceDetailPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Image Gallery */}
             <div className="space-y-4">
-              {place.images && place.images.length > 0 ? (
+              {imageUrls && imageUrls.length > 0 ? (
                 <>
                   <div className="relative aspect-video rounded-xl overflow-hidden">
                     <img
-                      src={place.images[selectedImageIndex]}
+                      src={imageUrls[selectedImageIndex]}
                       alt={place.name}
                       className="w-full h-full object-cover cursor-pointer"
                       onClick={() => setShowImageModal(true)}
@@ -242,9 +245,9 @@ const PlaceDetailPage = () => {
                     </button>
                   </div>
                   
-                  {place.images.length > 1 && (
+                  {imageUrls.length > 1 && (
                     <div className="grid grid-cols-4 gap-2">
-                      {place.images.slice(0, 4).map((image, index) => (
+                      {imageUrls.slice(0, 4).map((image, index) => (
                         <button
                           key={index}
                           onClick={() => setSelectedImageIndex(index)}
@@ -623,7 +626,7 @@ const PlaceDetailPage = () => {
       )}
 
       {/* Image Modal */}
-      {showImageModal && place.images && place.images.length > 0 && (
+      {showImageModal && imageUrls && imageUrls.length > 0 && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4">
           <div className="relative max-w-4xl w-full">
             <button
@@ -635,16 +638,16 @@ const PlaceDetailPage = () => {
             
             <div className="relative">
               <img
-                src={place.images[selectedImageIndex]}
+                src={imageUrls[selectedImageIndex]}
                 alt={place.name}
                 className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
               />
               
-              {place.images.length > 1 && (
+              {imageUrls.length > 1 && (
                 <>
                   <button
                     onClick={() => setSelectedImageIndex(prev => 
-                      prev === 0 ? place.images.length - 1 : prev - 1
+                      prev === 0 ? imageUrls.length - 1 : prev - 1
                     )}
                     className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white p-2 hover:bg-white/20 rounded-lg transition-colors duration-200"
                   >
@@ -653,7 +656,7 @@ const PlaceDetailPage = () => {
                   
                   <button
                     onClick={() => setSelectedImageIndex(prev => 
-                      prev === place.images.length - 1 ? 0 : prev + 1
+                      prev === imageUrls.length - 1 ? 0 : prev + 1
                     )}
                     className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white p-2 hover:bg-white/20 rounded-lg transition-colors duration-200"
                   >
@@ -665,7 +668,7 @@ const PlaceDetailPage = () => {
             
             <div className="text-center mt-4">
               <span className="text-white text-sm">
-                {selectedImageIndex + 1} of {place.images.length}
+                {selectedImageIndex + 1} of {imageUrls.length}
               </span>
             </div>
           </div>

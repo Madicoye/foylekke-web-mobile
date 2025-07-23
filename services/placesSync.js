@@ -82,34 +82,94 @@ class PlacesSyncService {
       if (recentSearch) {
         recentSearch.placeIds.forEach(id => places.add(id));
         console.log(`Found ${places.size} places from cache for point ${pointKey}`);
-        return Array.from(places);
+        
+        // Even when using cache, we should update the database with latest data
+        // Get the raw data for these places and update them
+        const rawPlaces = await PlaceRaw.find({ 
+          googlePlaceId: { $in: Array.from(places) } 
+        }).lean();
+        
+        const foundPlaces = [];
+        for (const rawPlace of rawPlaces) {
+          const place = rawPlace.rawData;
+          
+          // Map Google Places data to our Place model
+          const placeData = {
+            name: place.name,
+            description: `Discovered via Google Places API at ${pointKey}`,
+            type: this.mapGoogleType(place.types),
+            googlePlaceId: place.place_id,
+            source: 'google_places',
+            status: 'pending', // Needs verification
+            address: {
+              street: place.vicinity,
+              city: 'Dakar',
+              region: 'Dakar',
+              country: 'Senegal',
+              coordinates: {
+                lat: place.geometry.location.lat,
+                lng: place.geometry.location.lng
+              }
+            },
+            ratings: {
+              googleRating: place.rating,
+              reviewCount: place.user_ratings_total || 0,
+              appRating: 0
+            },
+            // Add photos if available from Google Places
+            images: place.photos ? place.photos.map((photo, index) => ({
+              url: `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photo.photo_reference}&key=${this.apiKey}`,
+              caption: `${place.name} - Photo ${index + 1}`,
+              isDefault: index === 0
+            })) : []
+          };
+          
+          foundPlaces.push(placeData);
+        }
+        
+        // Update places in database even when using cache
+        if (foundPlaces.length > 0) {
+          for (const placeData of foundPlaces) {
+            await Place.findOneAndUpdate(
+              { googlePlaceId: placeData.googlePlaceId },
+              placeData,
+              { upsert: true, new: true }
+            );
+          }
+          console.log(`  📝 Updated ${foundPlaces.length} places from cache data`);
+        }
+        
+        return {
+          placeIds: Array.from(places),
+          apiCalls: 0 // No API calls when using cache
+        };
       }
 
       console.log(`\n🔍 Searching around ${pointKey} (${point.radius}m radius)`);
-      
-      try {
-        apiCallCount++;
-        const response = await this.makeApiCall(
+        
+        try {
+          apiCallCount++;
+          const response = await this.makeApiCall(
           () => this.client.placesNearby({
-            params: {
+              params: {
               location: { lat: point.lat, lng: point.lng },
               radius: point.radius || 400,
-              type: ALL_EATERY_TYPES,
-              key: this.apiKey,
+                type: ALL_EATERY_TYPES,
+                key: this.apiKey,
               language: 'fr'
-            },
-            timeout: 5000
-          })
-        );
+              },
+              timeout: 5000
+            })
+          );
 
-        if (response.data.results) {
+          if (response.data.results) {
           const foundPlaces = [];
-          const initialResults = response.data.results.length;
-          console.log(`  Found ${initialResults} places`);
-          
-          for (const place of response.data.results) {
+            const initialResults = response.data.results.length;
+            console.log(`  Found ${initialResults} places`);
+            
+            for (const place of response.data.results) {
             if (place.vicinity?.toLowerCase().includes('dakar')) {
-              places.add(place.place_id);
+                places.add(place.place_id);
               
               // Save raw place data
               await PlaceRaw.findOneAndUpdate(
@@ -145,7 +205,13 @@ class PlacesSyncService {
                   googleRating: place.rating,
                   reviewCount: place.user_ratings_total || 0,
                   appRating: 0
-                }
+                },
+                // Add photos if available from Google Places
+                images: place.photos ? place.photos.map((photo, index) => ({
+                  url: `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photo.photo_reference}&key=${this.apiKey}`,
+                  caption: `${place.name} - Photo ${index + 1}`,
+                  isDefault: index === 0
+                })) : []
               };
               
               foundPlaces.push(placeData);
@@ -159,21 +225,21 @@ class PlacesSyncService {
           if (initialResults === RESULTS_PER_PAGE && 
               response.data.next_page_token &&
               (!limit || places.size < limit)) {
-            
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            apiCallCount++;
-            
-            const nextResponse = await this.makeApiCall(
-              () => this.client.placesNearby({
-                params: {
-                  pagetoken: response.data.next_page_token,
-                  key: this.apiKey
-                },
-                timeout: 5000
-              })
-            );
 
-            if (nextResponse.data.results) {
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              apiCallCount++;
+              
+              const nextResponse = await this.makeApiCall(
+              () => this.client.placesNearby({
+                  params: {
+                    pagetoken: response.data.next_page_token,
+                    key: this.apiKey
+                  },
+                  timeout: 5000
+                })
+              );
+
+              if (nextResponse.data.results) {
               for (const place of nextResponse.data.results) {
                 if (place.vicinity?.toLowerCase().includes('dakar')) {
                   places.add(place.place_id);
@@ -212,7 +278,13 @@ class PlacesSyncService {
                       googleRating: place.rating,
                       reviewCount: place.user_ratings_total || 0,
                       appRating: 0
-                    }
+                    },
+                    // Add photos if available from Google Places
+                    images: place.photos ? place.photos.map((photo, index) => ({
+                      url: `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photo.photo_reference}&key=${this.apiKey}`,
+                      caption: `${place.name} - Photo ${index + 1}`,
+                      isDefault: index === 0
+                    })) : []
                   };
                   
                   foundPlaces.push(placeData);
@@ -225,31 +297,32 @@ class PlacesSyncService {
             }
           }
 
-          if (foundPlaces.length > 0) {
-            // Save to SearchTracker
-            await SearchTracker.create({
-              location: pointKey,
-              radius: point.radius || 400,
-              searchTerms: ALL_EATERY_TYPES,
-              placeIds: Array.from(places),
-              lastSearched: new Date(),
-              refreshInterval: 30 // 30 days default
-            });
+         
+        // Save to SearchTracker
+        await SearchTracker.create({
+            location: pointKey,
+            radius: point.radius || 400,
+            searchTerms: ALL_EATERY_TYPES,
+            placeIds: Array.from(places),
+            lastSearched: new Date(),
+            refreshInterval: 30 // 30 days default
+        });
 
+        if (foundPlaces.length > 0) {
             // Save places to DB
             for (const placeData of foundPlaces) {
-              await Place.findOneAndUpdate(
+            await Place.findOneAndUpdate(
                 { googlePlaceId: placeData.googlePlaceId },
                 placeData,
                 { upsert: true, new: true }
-              );
+            );
             }
 
             // Show progress
             const cost = (apiCallCount * 0.017).toFixed(2);
             console.log(`  💰 Current cost: $${cost} USD (${apiCallCount} calls)`);
             console.log(`  📊 Total unique places: ${places.size}`);
-          }
+        }
         }
 
       } catch (error) {
@@ -262,7 +335,10 @@ class PlacesSyncService {
       throw error;
     }
 
-    return Array.from(places);
+    return {
+      placeIds: Array.from(places),
+      apiCalls: apiCallCount
+    };
   }
 
   // Helper method to map Google Places types to our place types
@@ -283,7 +359,9 @@ class PlacesSyncService {
     try {
       console.log(`\n🔄 Starting sync for point ${point.lat},${point.lng}`);
       
-      const placeIds = await this.findPlacesAtPoint(point);
+      const result = await this.findPlacesAtPoint(point);
+      const placeIds = Array.isArray(result) ? result : result.placeIds;
+      const apiCalls = result.apiCalls || 0;
       
       console.log(`\n📊 Point sync completed:`);
       console.log(`📍 Total unique places found: ${placeIds.length}`);
@@ -291,7 +369,8 @@ class PlacesSyncService {
       return {
         point,
         totalFound: placeIds.length,
-        placeIds
+        placeIds,
+        apiCalls
       };
     } catch (error) {
       console.error(`Error syncing point ${point.lat},${point.lng}:`, error);
