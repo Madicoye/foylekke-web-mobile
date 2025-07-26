@@ -7,17 +7,26 @@ import {
   MapPin, 
   X,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Menu,
+  Navigation,
+  Clock,
+  Calendar,
+  Car,
+  Users
 } from 'lucide-react';
 import { placesAPI } from '../../services/api';
 import { getPopularCuisineTypes, getCuisineTypeConfig } from '../../config/cuisineTypes';
+import { toast } from 'react-hot-toast';
 
 const FilterSidebar = ({ filters, onFilterChange, showFilters, onToggleFilters }) => {
   const [expandedSections, setExpandedSections] = React.useState({
     cuisine: true,
     region: true,
     rating: true,
-    price: true
+    price: true,
+    features: true,
+    location: false
   });
 
   // Get popular cuisine types from configuration
@@ -27,6 +36,21 @@ const FilterSidebar = ({ filters, onFilterChange, showFilters, onToggleFilters }
     'Dakar', 'Thiès', 'Saint-Louis', 'Kaolack', 'Ziguinchor',
     'Kolda', 'Tambacounda', 'Kaffrine', 'Fatick', 'Louga',
     'Matam', 'Kédougou', 'Sédhiou'
+  ];
+
+  const priceRanges = [
+    { value: 'low', label: 'Budget ($)', description: 'Affordable options' },
+    { value: 'medium', label: 'Moderate ($$)', description: 'Mid-range pricing' },
+    { value: 'high', label: 'Expensive ($$$)', description: 'Premium options' }
+  ];
+
+  const features = [
+    { value: 'hasMenu', label: 'Menu Available', icon: Menu },
+    { value: 'delivery', label: 'Delivery', icon: Navigation },
+    { value: 'takeout', label: 'Takeout', icon: Clock },
+    { value: 'reservations', label: 'Reservations', icon: Calendar },
+    { value: 'parking', label: 'Parking', icon: Car },
+    { value: 'wheelchair', label: 'Wheelchair Access', icon: Users }
   ];
 
   const toggleSection = (section) => {
@@ -40,8 +64,37 @@ const FilterSidebar = ({ filters, onFilterChange, showFilters, onToggleFilters }
     onFilterChange({ [key]: value });
   };
 
+  const handleFeatureToggle = (feature) => {
+    const currentFeatures = filters.features ? filters.features.split(',') : [];
+    const isSelected = currentFeatures.includes(feature);
+    
+    let newFeatures;
+    if (isSelected) {
+      newFeatures = currentFeatures.filter(f => f !== feature);
+    } else {
+      newFeatures = [...currentFeatures, feature];
+    }
+    
+    onFilterChange({ features: newFeatures.join(',') });
+  };
+
   const clearFilter = (key) => {
     onFilterChange({ [key]: '' });
+  };
+
+  const clearAllFilters = () => {
+    onFilterChange({
+      search: '',
+      type: '',
+      cuisine: '',
+      region: '',
+      minRating: '',
+      priceLevel: '',
+      features: '',
+      nearbyRadius: '',
+      sortBy: 'rating',
+      sortOrder: 'desc'
+    });
   };
 
   const getActiveFiltersCount = () => {
@@ -94,7 +147,7 @@ const FilterSidebar = ({ filters, onFilterChange, showFilters, onToggleFilters }
               </span>
             )}
           </div>
-          {expandedSections.cuisine ? (
+          {showFilters ? (
             <ChevronUp size={16} />
           ) : (
             <ChevronDown size={16} />
@@ -102,224 +155,278 @@ const FilterSidebar = ({ filters, onFilterChange, showFilters, onToggleFilters }
         </button>
       </div>
 
-      {/* Desktop Sidebar */}
-      <div className={`lg:block ${showFilters ? 'block' : 'hidden'}`}>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
-            {getActiveFiltersCount() > 0 && (
-              <button
-                onClick={() => {
-                  onFilterChange({
-                    search: '',
-                    cuisine: '',
-                    region: '',
-                    minRating: '',
-                    priceLevel: '',
-                    sortBy: 'rating',
-                    sortOrder: 'desc'
-                  });
-                }}
-                className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-              >
-                Clear all
-              </button>
-            )}
-          </div>
-
-          {/* Cuisine Type Filter */}
-          <FilterSection title="Cuisine Type" sectionKey="cuisine">
-            <div className="space-y-2">
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name="cuisine"
-                  value=""
-                  checked={filters.cuisine === ''}
-                  onChange={(e) => handleFilterChange('cuisine', e.target.value)}
-                  className="text-primary-500 focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700">All Cuisines</span>
-              </label>
-              {cuisineTypes.map((cuisine) => {
-                const config = getCuisineTypeConfig(cuisine);
-                return (
-                  <label key={cuisine} className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="cuisine"
-                      value={cuisine}
-                      checked={filters.cuisine === cuisine}
-                      onChange={(e) => handleFilterChange('cuisine', e.target.value)}
-                      className="text-primary-500 focus:ring-primary-500"
-                    />
-                    <span className="text-sm text-gray-700">
-                      <span className="mr-2">{config?.icon || '🍽️'}</span>
-                      {config?.name || cuisine.replace('_', ' ')}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </FilterSection>
-
-          {/* Region Filter */}
-          <FilterSection title="Region" sectionKey="region">
-            <div className="space-y-2">
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name="region"
-                  value=""
-                  checked={filters.region === ''}
-                  onChange={(e) => handleFilterChange('region', e.target.value)}
-                  className="text-primary-500 focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700">All Regions</span>
-              </label>
-              {regions.map((region) => (
-                <label key={region} className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="region"
-                    value={region}
-                    checked={filters.region === region}
-                    onChange={(e) => handleFilterChange('region', e.target.value)}
-                    className="text-primary-500 focus:ring-primary-500"
-                  />
-                  <span className="text-sm text-gray-700">
-                    <MapPin size={14} className="inline mr-2 text-gray-400" />
-                    {region}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </FilterSection>
-
-          {/* Rating Filter */}
-          <FilterSection title="Minimum Rating" sectionKey="rating">
-            <div className="space-y-2">
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name="minRating"
-                  value=""
-                  checked={filters.minRating === ''}
-                  onChange={(e) => handleFilterChange('minRating', e.target.value)}
-                  className="text-primary-500 focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700">Any Rating</span>
-              </label>
-              {[3, 3.5, 4, 4.5].map((rating) => (
-                <label key={rating} className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="minRating"
-                    value={rating}
-                    checked={filters.minRating === rating.toString()}
-                    onChange={(e) => handleFilterChange('minRating', e.target.value)}
-                    className="text-primary-500 focus:ring-primary-500"
-                  />
-                  <span className="text-sm text-gray-700">
-                    <div className="flex items-center space-x-1">
-                      <Star size={14} className="fill-yellow-400 text-yellow-400" />
-                      <span>{rating}+ stars</span>
-                    </div>
-                  </span>
-                </label>
-              ))}
-            </div>
-          </FilterSection>
-
-          {/* Price Level Filter */}
-          <FilterSection title="Price Level" sectionKey="price">
-            <div className="space-y-2">
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name="priceLevel"
-                  value=""
-                  checked={filters.priceLevel === ''}
-                  onChange={(e) => handleFilterChange('priceLevel', e.target.value)}
-                  className="text-primary-500 focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700">Any Price</span>
-              </label>
-              {[1, 2, 3, 4].map((level) => (
-                <label key={level} className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="priceLevel"
-                    value={level}
-                    checked={filters.priceLevel === level.toString()}
-                    onChange={(e) => handleFilterChange('priceLevel', e.target.value)}
-                    className="text-primary-500 focus:ring-primary-500"
-                  />
-                  <span className="text-sm text-gray-700">
-                    {'€'.repeat(level)} - {level === 1 ? 'Budget' : level === 2 ? 'Moderate' : level === 3 ? 'Expensive' : 'Very Expensive'}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </FilterSection>
-
-          {/* Active Filters */}
-          {getActiveFiltersCount() > 0 && (
-            <div className="pt-4 border-t border-gray-200">
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Active Filters</h4>
-              <div className="space-y-2">
-                {filters.cuisine && (
-                  <div className="flex items-center justify-between bg-primary-50 text-primary-700 px-3 py-2 rounded-lg">
-                    <span className="text-sm">
-                      Cuisine: {getCuisineTypeConfig(filters.cuisine)?.name || filters.cuisine.replace('_', ' ')}
-                    </span>
-                    <button
-                      onClick={() => clearFilter('cuisine')}
-                      className="text-primary-600 hover:text-primary-700"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
+      {/* Filter Sidebar */}
+      <AnimatePresence>
+        {(showFilters || window.innerWidth >= 1024) && (
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+              <div className="flex items-center space-x-2">
+                {getActiveFiltersCount() > 0 && (
+                  <button
+                    onClick={clearAllFilters}
+                    className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                  >
+                    Clear All
+                  </button>
                 )}
-                {filters.region && (
-                  <div className="flex items-center justify-between bg-primary-50 text-primary-700 px-3 py-2 rounded-lg">
-                    <span className="text-sm">Region: {filters.region}</span>
-                    <button
-                      onClick={() => clearFilter('region')}
-                      className="text-primary-600 hover:text-primary-700"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                )}
-                {filters.minRating && (
-                  <div className="flex items-center justify-between bg-primary-50 text-primary-700 px-3 py-2 rounded-lg">
-                    <span className="text-sm">Rating: {filters.minRating}+ stars</span>
-                    <button
-                      onClick={() => clearFilter('minRating')}
-                      className="text-primary-600 hover:text-primary-700"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                )}
-                {filters.priceLevel && (
-                  <div className="flex items-center justify-between bg-primary-50 text-primary-700 px-3 py-2 rounded-lg">
-                    <span className="text-sm">Price: {'€'.repeat(filters.priceLevel)}</span>
-                    <button
-                      onClick={() => clearFilter('priceLevel')}
-                      className="text-primary-600 hover:text-primary-700"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                )}
+                <button
+                  onClick={onToggleFilters}
+                  className="lg:hidden p-1 hover:bg-gray-100 rounded"
+                >
+                  <X size={16} />
+                </button>
               </div>
             </div>
-          )}
-        </div>
-      </div>
+
+            {/* Active Filters */}
+            {getActiveFiltersCount() > 0 && (
+              <div className="mb-6">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Active Filters</h4>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(filters).map(([key, value]) => {
+                    if (!value || value === 'rating' || value === 'desc') return null;
+                    return (
+                      <span
+                        key={key}
+                        className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800"
+                      >
+                        {value}
+                        <button
+                          onClick={() => clearFilter(key)}
+                          className="ml-1 hover:text-primary-600"
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Location & Nearby */}
+            <FilterSection title="Location" sectionKey="location">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Search Radius (km)
+                  </label>
+                  <select
+                    value={filters.nearbyRadius || ''}
+                    onChange={(e) => handleFilterChange('nearbyRadius', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  >
+                    <option value="">Any distance</option>
+                    <option value="1">Within 1 km</option>
+                    <option value="5">Within 5 km</option>
+                    <option value="10">Within 10 km</option>
+                    <option value="20">Within 20 km</option>
+                    <option value="50">Within 50 km</option>
+                  </select>
+                </div>
+                <button
+                  onClick={() => {
+                    if (navigator.geolocation) {
+                      navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                          onFilterChange({
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            nearbyRadius: filters.nearbyRadius || '10'
+                          });
+                        },
+                        (error) => {
+                          console.error('Error getting location:', error);
+                          toast.error('Unable to get your location');
+                        }
+                      );
+                    }
+                  }}
+                  className="w-full flex items-center justify-center space-x-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  <Navigation size={16} />
+                  <span>Use My Location</span>
+                </button>
+              </div>
+            </FilterSection>
+
+            {/* Features */}
+            <FilterSection title="Features" sectionKey="features">
+              <div className="space-y-3">
+                {features.map((feature) => {
+                  const IconComponent = feature.icon;
+                  const isSelected = filters.features?.split(',').includes(feature.value) || false;
+                  
+                  return (
+                    <label
+                      key={feature.value}
+                      className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-md transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleFeatureToggle(feature.value)}
+                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 focus:ring-offset-0"
+                      />
+                      <IconComponent size={16} className="text-gray-500" />
+                      <span className="text-sm text-gray-700">{feature.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </FilterSection>
+
+            {/* Cuisine Type */}
+            <FilterSection title="Cuisine Type" sectionKey="cuisine">
+              <div className="space-y-2">
+                {cuisineTypes.map((cuisine) => {
+                  const config = getCuisineTypeConfig(cuisine);
+                  const isSelected = filters.cuisine === cuisine;
+                  
+                  return (
+                    <label
+                      key={cuisine}
+                      className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-md transition-colors"
+                    >
+                      <input
+                        type="radio"
+                        name="cuisine"
+                        value={cuisine}
+                        checked={isSelected}
+                        onChange={(e) => handleFilterChange('cuisine', e.target.value)}
+                        className="text-primary-600 focus:ring-primary-500 focus:ring-offset-0"
+                      />
+                      <span className="text-lg">{config?.emoji || '🍽️'}</span>
+                      <span className="text-sm text-gray-700">{config?.label || cuisine}</span>
+                    </label>
+                  );
+                })}
+                {filters.cuisine && (
+                  <button
+                    onClick={() => clearFilter('cuisine')}
+                    className="text-sm text-gray-500 hover:text-gray-700 ml-8"
+                  >
+                    Clear selection
+                  </button>
+                )}
+              </div>
+            </FilterSection>
+
+            {/* Region */}
+            <FilterSection title="Region" sectionKey="region">
+              <div className="space-y-2">
+                <select
+                  value={filters.region || ''}
+                  onChange={(e) => handleFilterChange('region', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="">All Regions</option>
+                  {regions.map((region) => (
+                    <option key={region} value={region}>
+                      {region}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </FilterSection>
+
+            {/* Price Range */}
+            <FilterSection title="Price Range" sectionKey="price">
+              <div className="space-y-3">
+                {priceRanges.map((priceRange) => {
+                  const isSelected = filters.priceLevel === priceRange.value;
+                  
+                  return (
+                    <label
+                      key={priceRange.value}
+                      className="flex items-start space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-md transition-colors"
+                    >
+                      <input
+                        type="radio"
+                        name="priceLevel"
+                        value={priceRange.value}
+                        checked={isSelected}
+                        onChange={(e) => handleFilterChange('priceLevel', e.target.value)}
+                        className="mt-1 text-primary-600 focus:ring-primary-500 focus:ring-offset-0"
+                      />
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {priceRange.label}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {priceRange.description}
+                        </div>
+                      </div>
+                    </label>
+                  );
+                })}
+                {filters.priceLevel && (
+                  <button
+                    onClick={() => clearFilter('priceLevel')}
+                    className="text-sm text-gray-500 hover:text-gray-700 ml-8"
+                  >
+                    Clear selection
+                  </button>
+                )}
+              </div>
+            </FilterSection>
+
+            {/* Rating */}
+            <FilterSection title="Minimum Rating" sectionKey="rating">
+              <div className="space-y-3">
+                {[4, 3, 2, 1].map((rating) => {
+                  const isSelected = parseInt(filters.minRating) === rating;
+                  
+                  return (
+                    <label
+                      key={rating}
+                      className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-md transition-colors"
+                    >
+                      <input
+                        type="radio"
+                        name="minRating"
+                        value={rating}
+                        checked={isSelected}
+                        onChange={(e) => handleFilterChange('minRating', e.target.value)}
+                        className="text-primary-600 focus:ring-primary-500 focus:ring-offset-0"
+                      />
+                      <div className="flex items-center space-x-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            size={16}
+                            className={`${
+                              i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                            }`}
+                          />
+                        ))}
+                        <span className="text-sm text-gray-700 ml-2">
+                          {rating}+ stars
+                        </span>
+                      </div>
+                    </label>
+                  );
+                })}
+                {filters.minRating && (
+                  <button
+                    onClick={() => clearFilter('minRating')}
+                    className="text-sm text-gray-500 hover:text-gray-700 ml-8"
+                  >
+                    Clear selection
+                  </button>
+                )}
+              </div>
+            </FilterSection>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

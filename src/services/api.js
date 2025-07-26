@@ -132,6 +132,28 @@ export const placesAPI = {
   // Advanced search
   advancedSearch: (searchData) => 
     api.post('/api/places/advanced-search', searchData).then(response => response.data),
+
+  // Get places by location (nearby)
+  getNearbyPlaces: (lat, lng, radius, filters = {}) => 
+    api.get('/api/places/nearby', { 
+      params: { lat, lng, radius, ...filters } 
+    }).then(response => response.data),
+
+  // Get places with available menu
+  getPlacesWithMenu: (params = {}) => 
+    api.get('/api/places/with-menu', { params }).then(response => response.data),
+
+  // Vote on place (upvote/downvote)
+  voteOnPlace: (placeId, voteType) => 
+    api.post(`/api/places/${placeId}/vote`, { voteType }).then(response => response.data),
+
+  // Get place votes
+  getPlaceVotes: (placeId) => 
+    api.get(`/api/places/${placeId}/votes`).then(response => response.data),
+
+  // Remove vote from place
+  removeVote: (placeId) => 
+    api.delete(`/api/places/${placeId}/vote`).then(response => response.data),
 };
 
 // Reviews API
@@ -202,14 +224,64 @@ export const hangoutsAPI = {
   // Update hangout
   updateHangout: (id, data) => api.put(`/api/hangouts/${id}`, data).then(response => response.data),
   
+  // Delete hangout
+  deleteHangout: (id) => api.delete(`/api/hangouts/${id}`).then(response => response.data),
+  
   // Join hangout
   joinHangout: (id) => api.post(`/api/hangouts/${id}/join`).then(response => response.data),
   
   // Leave hangout
   leaveHangout: (id) => api.post(`/api/hangouts/${id}/leave`).then(response => response.data),
   
+  // Request to join public hangout
+  requestToJoin: (id, message) => api.post(`/api/hangouts/${id}/request`, { message }).then(response => response.data),
+
+  // Approve join request
+  approveJoinRequest: (hangoutId, requestId) => 
+    api.post(`/api/hangouts/${hangoutId}/approve/${requestId}`).then(response => response.data),
+
+  // Reject join request
+  rejectJoinRequest: (hangoutId, requestId) => 
+    api.post(`/api/hangouts/${hangoutId}/reject/${requestId}`).then(response => response.data),
+
+  // Send invitations
+  sendInvitations: (hangoutId, invitations) => 
+    api.post(`/api/hangouts/${hangoutId}/invite`, { invitations }).then(response => response.data),
+
+  // Respond to invitation
+  respondToInvitation: (invitationId, response, message) => 
+    api.post(`/api/hangouts/invitations/${invitationId}/respond`, { response, message }).then(response => response.data),
+
+  // Get hangout invitations
+  getMyInvitations: (status) => 
+    api.get('/api/hangouts/invitations', { params: { status } }).then(response => response.data),
+
+  // Get hangout statistics
+  getHangoutStats: (id) => 
+    api.get(`/api/hangouts/${id}/stats`).then(response => response.data),
+
+  // Get public hangouts
+  getPublicHangouts: (params = {}) => 
+    api.get('/api/hangouts/public', { params }).then(response => response.data),
+
+  // Get join requests for a hangout (organizer only)
+  getJoinRequests: (hangoutId) => 
+    api.get(`/api/hangouts/${hangoutId}/requests`).then(response => response.data),
+  
   // Add message to hangout
   addMessage: (id, content) => api.post(`/api/hangouts/${id}/messages`, { content }).then(response => response.data),
+
+  // Add place to hangout
+  addPlaceToHangout: (hangoutId, placeId, isManual, manualAddress) => 
+    api.post(`/api/hangouts/${hangoutId}/places`, { 
+      placeId, 
+      isManual, 
+      manualAddress 
+    }).then(response => response.data),
+
+  // Remove place from hangout
+  removePlaceFromHangout: (hangoutId, placeId) => 
+    api.delete(`/api/hangouts/${hangoutId}/places/${placeId}`).then(response => response.data),
 };
 
 // Advertisements API

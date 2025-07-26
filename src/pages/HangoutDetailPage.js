@@ -1,145 +1,227 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { 
-  MapPin, 
-  Calendar, 
-  Clock, 
-  Users, 
+  Calendar,
+  Clock,
+  MapPin,
+  Users,
   User,
-  MessageCircle,
+  CheckCircle,
+  XCircle,
+  Clock as ClockIcon,
+  Edit,
   Share2,
   Heart,
-  ChevronLeft,
-  Send,
+  MessageCircle,
   Settings,
   UserPlus,
   UserMinus,
-  Eye,
-  EyeOff,
-  Tag,
-  AlertCircle,
-  CheckCircle,
-  XCircle,
-  Phone,
+  AlertTriangle,
   Globe,
-  Navigation,
-  Edit3,
-  Trash2
+  Lock,
+  Check,
+  X,
+  Mail,
+  Phone
 } from 'lucide-react';
-import { hangoutsAPI, placesAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { hangoutsAPI } from '../services/api';
 import { toast } from 'react-hot-toast';
-import { getCuisineTypeConfig } from '../config/cuisineTypes';
-import { getPlaceTypeConfig } from '../config/placeTypes';
-import { getImageUrls } from '../utils/imageUtils';
 
 const HangoutDetailPage = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('overview');
-  const [newMessage, setNewMessage] = useState('');
-  const [showAllParticipants, setShowAllParticipants] = useState(false);
-  const messagesEndRef = useRef(null);
+  
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showJoinRequestModal, setShowJoinRequestModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [invitePhone, setInvitePhone] = useState('');
+  const [joinRequestMessage, setJoinRequestMessage] = useState('');
 
   // Fetch hangout details
   const { data: hangout, isLoading, error } = useQuery(
     ['hangout', id],
     () => hangoutsAPI.getHangout(id),
     {
-      enabled: !!id && isAuthenticated,
-      refetchInterval: 30000, // Refresh every 30 seconds for real-time updates
+      enabled: !!id
+    }
+  );
+
+  // Fetch hangout statistics
+  const { data: stats } = useQuery(
+    ['hangoutStats', id],
+    () => hangoutsAPI.getHangoutStats(id),
+    {
+      enabled: !!id && !!hangout
+    }
+  );
+
+  // Fetch join requests (if user is organizer)
+  const { data: joinRequests = [] } = useQuery(
+    ['joinRequests', id],
+    () => hangoutsAPI.getJoinRequests(id),
+    {
+      enabled: !!id && !!hangout && user?._id === hangout?.organizerId
     }
   );
 
   // Join hangout mutation
-  const joinMutation = useMutation(
-    () => hangoutsAPI.joinHangout(id),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['hangout', id]);
-        toast.success('Successfully joined the hangout!');
-      },
-      onError: (error) => {
-        toast.error(error.response?.data?.message || 'Failed to join hangout');
-      }
+  const joinMutation = useMutation(hangoutsAPI.joinHangout, {
+    onSuccess: () => {
+      queryClient.invalidateQueries(['hangout', id]);
+      queryClient.invalidateQueries(['hangoutStats', id]);
+      toast.success('Successfully joined the hangout!');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to join hangout');
     }
-  );
+  });
 
   // Leave hangout mutation
-  const leaveMutation = useMutation(
-    () => hangoutsAPI.leaveHangout(id),
+  const leaveMutation = useMutation(hangoutsAPI.leaveHangout, {
+    onSuccess: () => {
+      queryClient.invalidateQueries(['hangout', id]);
+      queryClient.invalidateQueries(['hangoutStats', id]);
+      toast.success('Left the hangout');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to leave hangout');
+    }
+  });
+
+  // Request to join mutation
+  const requestJoinMutation = useMutation(
+    ({ hangoutId, message }) => hangoutsAPI.requestToJoin(hangoutId, message),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries(['hangout', id]);
-        toast.success('Successfully left the hangout');
+        setShowJoinRequestModal(false);
+        setJoinRequestMessage('');
+        toast.success('Join request sent!');
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Failed to leave hangout');
+        toast.error(error.response?.data?.message || 'Failed to send join request');
       }
     }
   );
 
-  // Send message mutation
-  const sendMessageMutation = useMutation(
-    (content) => hangoutsAPI.addMessage(id, content),
+  // Approve join request mutation
+  const approveRequestMutation = useMutation(
+    ({ hangoutId, requestId }) => hangoutsAPI.approveJoinRequest(hangoutId, requestId),
     {
       onSuccess: () => {
+        queryClient.invalidateQueries(['joinRequests', id]);
         queryClient.invalidateQueries(['hangout', id]);
-        setNewMessage('');
-        scrollToBottom();
+        queryClient.invalidateQueries(['hangoutStats', id]);
+        toast.success('Join request approved!');
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Failed to send message');
+        toast.error(error.response?.data?.message || 'Failed to approve request');
       }
     }
   );
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // Reject join request mutation
+  const rejectRequestMutation = useMutation(
+    ({ hangoutId, requestId }) => hangoutsAPI.rejectJoinRequest(hangoutId, requestId),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['joinRequests', id]);
+        toast.success('Join request rejected');
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.message || 'Failed to reject request');
+      }
+    }
+  );
+
+  // Send invitations mutation
+  const sendInvitationsMutation = useMutation(
+    ({ hangoutId, invitations }) => hangoutsAPI.sendInvitations(hangoutId, invitations),
+    {
+      onSuccess: () => {
+        setShowInviteModal(false);
+        setInviteEmail('');
+        setInvitePhone('');
+        toast.success('Invitations sent!');
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.message || 'Failed to send invitations');
+      }
+    }
+  );
+
+  const handleJoin = () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    if (hangout.requireApproval) {
+      setShowJoinRequestModal(true);
+    } else {
+      joinMutation.mutate(id);
+    }
   };
 
-  useEffect(() => {
-    if (activeTab === 'chat') {
-      scrollToBottom();
+  const handleLeave = () => {
+    if (window.confirm('Are you sure you want to leave this hangout?')) {
+      leaveMutation.mutate(id);
     }
-  }, [hangout?.messages, activeTab]);
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Authentication Required</h1>
-          <p className="text-gray-600 mb-6">Please log in to view hangout details.</p>
-          <button
-            onClick={() => navigate('/login')}
-            className="bg-primary-500 hover:bg-primary-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-          >
-            Log In
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const getDirectionsUrl = () => {
-    if (hangout.place?.address?.coordinates?.coordinates) {
-      const [lng, lat] = hangout.place.address.coordinates.coordinates;
-      return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-    }
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hangout.place?.name + ' ' + hangout.place?.address?.street)}`;
   };
 
-  const getDefaultImage = (type) => {
-    const config = getPlaceTypeConfig(type);
-    return {
-      icon: config?.icon || '📍',
-      gradient: 'from-primary-100 to-accent-100'
+  const handleSendInvitation = () => {
+    if (!inviteEmail.trim() && !invitePhone.trim()) {
+      toast.error('Please enter an email or phone number');
+      return;
+    }
+
+    const invitation = {
+      email: inviteEmail.trim(),
+      phone: invitePhone.trim(),
+      name: inviteEmail.split('@')[0] || invitePhone
     };
+
+    sendInvitationsMutation.mutate({
+      hangoutId: id,
+      invitations: [invitation]
+    });
   };
+
+  const handleJoinRequest = () => {
+    requestJoinMutation.mutate({
+      hangoutId: id,
+      message: joinRequestMessage.trim()
+    });
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
+
+  const formatTime = (timeString) => {
+    const [hours, minutes] = timeString.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
+  };
+
+  const isUserParticipant = hangout?.participants?.some(p => 
+    typeof p === 'string' ? p === user?._id : p._id === user?._id
+  );
+  const isUserOrganizer = hangout?.organizerId === user?._id;
+  const canJoin = user && !isUserParticipant && !isUserOrganizer && 
+    hangout?.participants?.length < hangout?.maxParticipants;
 
   if (isLoading) {
     return (
@@ -152,589 +234,527 @@ const HangoutDetailPage = () => {
     );
   }
 
-  if (error || !hangout) {
+  if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Hangout Not Found</h1>
-          <p className="text-gray-600 mb-6">The hangout you're looking for doesn't exist or has been removed.</p>
+          <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Hangout Not Found</h2>
+          <p className="text-gray-600 mb-4">This hangout doesn't exist or you don't have access to it.</p>
           <button
             onClick={() => navigate('/hangouts')}
-            className="bg-primary-500 hover:bg-primary-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
           >
-            Browse All Hangouts
+            Browse Hangouts
           </button>
         </div>
       </div>
     );
   }
 
-  const isCreator = hangout.creator._id === user?.id;
-  const isParticipant = hangout.participants.some(p => p.user._id === user?.id);
-  const canJoin = hangout.status === 'planned' && !isParticipant && (!hangout.maxParticipants || hangout.participants.length < hangout.maxParticipants);
-  const acceptedParticipants = hangout.participants.filter(p => p.status === 'accepted');
-  const pendingParticipants = hangout.participants.filter(p => p.status === 'pending');
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'planned': return 'bg-blue-100 text-blue-800';
-      case 'ongoing': return 'bg-green-100 text-green-800';
-      case 'completed': return 'bg-gray-100 text-gray-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'planned': return <Calendar className="h-4 w-4" />;
-      case 'ongoing': return <CheckCircle className="h-4 w-4" />;
-      case 'completed': return <CheckCircle className="h-4 w-4" />;
-      case 'cancelled': return <XCircle className="h-4 w-4" />;
-      default: return <AlertCircle className="h-4 w-4" />;
-    }
-  };
-
-  const formatDateTime = (dateTime) => {
-    const date = new Date(dateTime);
-    return {
-      date: date.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      }),
-      time: date.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      })
-    };
-  };
-
-  const formatMessageTime = (timestamp) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInHours = (now - date) / (1000 * 60 * 60);
-    
-    if (diffInHours < 1) {
-      return 'Just now';
-    } else if (diffInHours < 24) {
-      return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    } else {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }
-  };
-
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (newMessage.trim() && hangout.chatEnabled) {
-      sendMessageMutation.mutate(newMessage.trim());
-    }
-  };
-
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: hangout.title,
-          text: hangout.description,
-          url: window.location.href,
-        });
-      } catch (error) {
-        console.log('Error sharing:', error);
-      }
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success('Link copied to clipboard!');
-    }
-  };
-
-  const { date, time } = formatDateTime(hangout.dateTime);
-  const cuisineConfig = getCuisineTypeConfig(hangout.place?.cuisine?.[0]);
-  const typeConfig = getPlaceTypeConfig(hangout.place?.type);
-  const defaultImg = hangout.place ? getDefaultImage(hangout.place.type) : null;
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Breadcrumb */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <nav className="flex items-center space-x-2 text-sm">
-            <Link to="/" className="text-gray-500 hover:text-gray-700">Home</Link>
-            <span className="text-gray-400">/</span>
-            <Link to="/hangouts" className="text-gray-500 hover:text-gray-700">Hangouts</Link>
-            <span className="text-gray-400">/</span>
-            <span className="text-gray-900 font-medium">{hangout.title}</span>
-          </nav>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8"
+        >
+          {/* Cover Image */}
+          <div className="relative h-64 bg-gradient-to-br from-primary-500 to-accent-500">
+            {hangout.image && (
+              <img
+                src={hangout.image}
+                alt={hangout.title}
+                className="w-full h-full object-cover"
+              />
+            )}
+            <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+            
+            {/* Privacy Badge */}
+            <div className="absolute top-4 left-4">
+              <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-2 ${
+                hangout.isPublic ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+              }`}>
+                {hangout.isPublic ? <Globe size={14} /> : <Lock size={14} />}
+                <span>{hangout.isPublic ? 'Public' : 'Private'}</span>
+              </span>
+            </div>
 
-      {/* Hero Section */}
-      <section className="bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2">
-              {/* Header */}
+            {/* Action Buttons */}
+            <div className="absolute top-4 right-4 flex space-x-2">
+              <button className="p-2 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors">
+                <Share2 size={20} />
+              </button>
+              <button className="p-2 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors">
+                <Heart size={20} />
+              </button>
+              {isUserOrganizer && (
+                <button 
+                  onClick={() => navigate(`/hangouts/${id}/edit`)}
+                  className="p-2 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors"
+                >
+                  <Settings size={20} />
+                </button>
+              )}
+            </div>
+
+            {/* Title Overlay */}
+            <div className="absolute bottom-0 left-0 right-0 p-6">
+              <h1 className="text-3xl font-bold text-white mb-2">{hangout.title}</h1>
+              <div className="flex items-center space-x-4 text-white/90">
+                <div className="flex items-center space-x-1">
+                  <Calendar size={16} />
+                  <span>{formatDate(hangout.date)}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Clock size={16} />
+                  <span>{formatTime(hangout.time)}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Users size={16} />
+                  <span>{hangout.participants?.length || 0}/{hangout.maxParticipants}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-6">
+            {/* Description */}
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-3">About</h2>
+              <p className="text-gray-700 leading-relaxed">{hangout.description}</p>
+            </div>
+
+            {/* Tags */}
+            {hangout.tags && hangout.tags.length > 0 && (
               <div className="mb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(hangout.status)}`}>
-                      {getStatusIcon(hangout.status)}
-                      <span className="ml-2 capitalize">{hangout.status}</span>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Tags</h3>
+                <div className="flex flex-wrap gap-2">
+                  {hangout.tags.map(tag => (
+                    <span
+                      key={tag}
+                      className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
+                    >
+                      #{tag}
                     </span>
-                    {hangout.isPrivate && (
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-                        <EyeOff className="h-4 w-4 mr-1" />
-                        Private
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={handleShare}
-                      className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors duration-200"
-                    >
-                      <Share2 className="h-5 w-5" />
-                    </button>
-                    {isCreator && (
-                      <button className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors duration-200">
-                        <Edit3 className="h-5 w-5" />
-                      </button>
-                    )}
-                  </div>
+                  ))}
                 </div>
-                
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{hangout.title}</h1>
-                
-                {hangout.description && (
-                  <p className="text-gray-600 text-lg leading-relaxed">{hangout.description}</p>
-                )}
-              </div>
-
-              {/* Key Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                {/* Date & Time */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <Calendar className="h-5 w-5 text-primary-500" />
-                    <h3 className="font-semibold text-gray-900">Date & Time</h3>
-                  </div>
-                  <p className="text-gray-600">{date}</p>
-                  <p className="text-gray-600">{time}</p>
-                </div>
-
-                {/* Location */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <MapPin className="h-5 w-5 text-primary-500" />
-                    <h3 className="font-semibold text-gray-900">Location</h3>
-                  </div>
-                  <Link 
-                    to={`/places/${hangout.place._id}`}
-                    className="text-primary-600 hover:text-primary-700 font-medium"
-                  >
-                    {hangout.place.name}
-                  </Link>
-                  <p className="text-gray-600 text-sm">{hangout.place.address?.street}</p>
-                </div>
-
-                {/* Participants */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <Users className="h-5 w-5 text-primary-500" />
-                    <h3 className="font-semibold text-gray-900">Participants</h3>
-                  </div>
-                  <p className="text-gray-600">
-                    {acceptedParticipants.length}
-                    {hangout.maxParticipants && ` / ${hangout.maxParticipants}`} joined
-                  </p>
-                  {pendingParticipants.length > 0 && (
-                    <p className="text-gray-500 text-sm">{pendingParticipants.length} pending</p>
-                  )}
-                </div>
-
-                {/* Organizer */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <User className="h-5 w-5 text-primary-500" />
-                    <h3 className="font-semibold text-gray-900">Organizer</h3>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <img
-                      src={hangout.creator.profilePicture || `https://ui-avatars.com/api/?name=${hangout.creator.name}&background=3B82F6&color=fff`}
-                      alt={hangout.creator.name}
-                      className="w-8 h-8 rounded-full"
-                    />
-                    <span className="text-gray-900 font-medium">{hangout.creator.name}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Sidebar */}
-            <div className="lg:col-span-1">
-              {/* Action Buttons */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                <div className="space-y-3">
-                  {canJoin && (
-                    <button
-                      onClick={() => joinMutation.mutate()}
-                      disabled={joinMutation.isLoading}
-                      className="w-full flex items-center justify-center space-x-2 bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50"
-                    >
-                      <UserPlus className="h-5 w-5" />
-                      <span>{joinMutation.isLoading ? 'Joining...' : 'Join Hangout'}</span>
-                    </button>
-                  )}
-                  
-                  {isParticipant && !isCreator && (
-                    <button
-                      onClick={() => leaveMutation.mutate()}
-                      disabled={leaveMutation.isLoading}
-                      className="w-full flex items-center justify-center space-x-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50"
-                    >
-                      <UserMinus className="h-5 w-5" />
-                      <span>{leaveMutation.isLoading ? 'Leaving...' : 'Leave Hangout'}</span>
-                    </button>
-                  )}
-                  
-                  <a
-                    href={getDirectionsUrl()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full flex items-center justify-center space-x-2 bg-white border border-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-                  >
-                    <Navigation className="h-5 w-5" />
-                    <span>Get Directions</span>
-                  </a>
-                </div>
-              </div>
-
-              {/* Place Info */}
-              {hangout.place && (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">About the Place</h3>
-                  
-                  {(() => {
-                    const imageUrls = getImageUrls(hangout.place);
-                    return imageUrls.length > 0 ? (
-                      <div className="mb-4">
-                        <img
-                          src={imageUrls[0]}
-                          alt={hangout.place.name}
-                          className="w-full h-32 object-cover rounded-lg"
-                        />
-                      </div>
-                    ) : (
-                      <div className={`mb-4 w-full h-32 bg-gradient-to-br ${defaultImg?.gradient} rounded-lg flex items-center justify-center`}>
-                        <div className="text-center">
-                          <div className="text-3xl">{defaultImg?.icon}</div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Type</span>
-                      <span className="text-gray-900 font-medium">{typeConfig?.label || hangout.place.type}</span>
-                    </div>
-                    
-                    {hangout.place.cuisine && hangout.place.cuisine.length > 0 && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Cuisine</span>
-                        <span className="text-gray-900 font-medium">{cuisineConfig?.label || hangout.place.cuisine[0]}</span>
-                      </div>
-                    )}
-                    
-                    {hangout.place.ratings?.appRating && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Rating</span>
-                        <div className="flex items-center space-x-1">
-                          <span className="text-yellow-500">★</span>
-                          <span className="text-gray-900 font-medium">{hangout.place.ratings.appRating.toFixed(1)}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <Link
-                    to={`/places/${hangout.place._id}`}
-                    className="mt-4 block w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors duration-200"
-                  >
-                    View Place Details
-                  </Link>
-                </div>
-              )}
-
-              {/* Tags */}
-              {hangout.tags && hangout.tags.length > 0 && (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Tags</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {hangout.tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800"
-                      >
-                        <Tag className="h-3 w-3 mr-1" />
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Tabbed Content */}
-      <section className="bg-white border-t border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Tab Navigation */}
-          <div className="border-b border-gray-200 mb-8">
-            <nav className="flex space-x-8">
-              {[
-                { id: 'participants', label: 'Participants', icon: Users },
-                { id: 'chat', label: 'Chat', icon: MessageCircle },
-                { id: 'details', label: 'Details', icon: AlertCircle }
-              ].map(tab => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                      activeTab === tab.id
-                        ? 'border-primary-500 text-primary-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-
-          {/* Tab Content */}
-          <div className="min-h-[400px]">
-            {activeTab === 'participants' && (
-              <div className="space-y-6">
-                {/* Accepted Participants */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Joined ({acceptedParticipants.length})
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {acceptedParticipants.slice(0, showAllParticipants ? acceptedParticipants.length : 6).map((participant) => (
-                      <div
-                        key={participant.user._id}
-                        className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg"
-                      >
-                        <img
-                          src={participant.user.profilePicture || `https://ui-avatars.com/api/?name=${participant.user.name}&background=3B82F6&color=fff`}
-                          alt={participant.user.name}
-                          className="w-10 h-10 rounded-full"
-                        />
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900">{participant.user.name}</p>
-                          {participant.user._id === hangout.creator._id && (
-                            <p className="text-xs text-primary-600">Organizer</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {acceptedParticipants.length > 6 && (
-                    <button
-                      onClick={() => setShowAllParticipants(!showAllParticipants)}
-                      className="mt-4 text-primary-600 hover:text-primary-700 font-medium"
-                    >
-                      {showAllParticipants ? 'Show Less' : `Show ${acceptedParticipants.length - 6} More`}
-                    </button>
-                  )}
-                </div>
-
-                {/* Pending Participants */}
-                {pendingParticipants.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                      Pending ({pendingParticipants.length})
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {pendingParticipants.map((participant) => (
-                        <div
-                          key={participant.user._id}
-                          className="flex items-center space-x-3 p-4 bg-yellow-50 rounded-lg"
-                        >
-                          <img
-                            src={participant.user.profilePicture || `https://ui-avatars.com/api/?name=${participant.user.name}&background=F59E0B&color=fff`}
-                            alt={participant.user.name}
-                            className="w-10 h-10 rounded-full"
-                          />
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-900">{participant.user.name}</p>
-                            <p className="text-xs text-yellow-600">Pending response</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 
-            {activeTab === 'chat' && (
-              <div className="space-y-6">
-                {hangout.chatEnabled ? (
-                  <>
-                    {/* Messages */}
-                    <div className="bg-gray-50 rounded-lg p-4 h-96 overflow-y-auto">
-                      {hangout.messages && hangout.messages.length > 0 ? (
-                        <div className="space-y-4">
-                          {hangout.messages.map((message, index) => (
-                            <div
-                              key={index}
-                              className={`flex ${message.sender._id === user?.id ? 'justify-end' : 'justify-start'}`}
-                            >
-                              <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                                message.sender._id === user?.id
-                                  ? 'bg-primary-500 text-white'
-                                  : 'bg-white text-gray-900'
-                              }`}>
-                                {message.sender._id !== user?.id && (
-                                  <p className="text-xs font-medium mb-1 opacity-75">
-                                    {message.sender.name}
-                                  </p>
-                                )}
-                                <p className="text-sm">{message.content}</p>
-                                <p className={`text-xs mt-1 opacity-75`}>
-                                  {formatMessageTime(message.timestamp)}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                          <div ref={messagesEndRef} />
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center h-full text-gray-500">
-                          <div className="text-center">
-                            <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                            <p>No messages yet. Start the conversation!</p>
-                          </div>
-                        </div>
+            {/* Join/Leave Button */}
+            <div className="flex justify-center mb-6">
+              {!user ? (
+                <button
+                  onClick={() => navigate('/login')}
+                  className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium transition-colors"
+                >
+                  Login to Join
+                </button>
+              ) : isUserOrganizer ? (
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => setShowInviteModal(true)}
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2 transition-colors"
+                  >
+                    <UserPlus size={20} />
+                    <span>Invite Friends</span>
+                  </button>
+                  <button
+                    onClick={() => navigate(`/hangouts/${id}/edit`)}
+                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center space-x-2 transition-colors"
+                  >
+                    <Edit size={20} />
+                    <span>Edit Hangout</span>
+                  </button>
+                </div>
+              ) : isUserParticipant ? (
+                <button
+                  onClick={handleLeave}
+                  disabled={leaveMutation.isLoading}
+                  className="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center space-x-2 font-medium transition-colors"
+                >
+                  <UserMinus size={20} />
+                  <span>{leaveMutation.isLoading ? 'Leaving...' : 'Leave Hangout'}</span>
+                </button>
+              ) : canJoin ? (
+                <button
+                  onClick={handleJoin}
+                  disabled={joinMutation.isLoading}
+                  className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center space-x-2 font-medium transition-colors"
+                >
+                  <UserPlus size={20} />
+                  <span>{joinMutation.isLoading ? 'Joining...' : 'Join Hangout'}</span>
+                </button>
+              ) : hangout.participants?.length >= hangout.maxParticipants ? (
+                <div className="text-center">
+                  <p className="text-gray-600 mb-2">This hangout is full</p>
+                  <p className="text-sm text-gray-500">
+                    {hangout.maxParticipants} / {hangout.maxParticipants} participants
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </motion.div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Locations */}
+            {hangout.places && hangout.places.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+              >
+                <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                  <MapPin size={20} />
+                  <span>Locations ({hangout.places.length})</span>
+                </h2>
+                <div className="space-y-4">
+                  {hangout.places.map((place, index) => (
+                    <div key={place._id || index} className="p-4 border border-gray-200 rounded-lg">
+                      <h3 className="font-medium text-gray-900">{place.name}</h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {place.address?.street || place.address || 'Address not specified'}
+                      </p>
+                      {place.type && (
+                        <span className="inline-block mt-2 px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                          {place.type.replace('_', ' ')}
+                        </span>
                       )}
                     </div>
-
-                    {/* Message Input */}
-                    {(isParticipant || isCreator) && (
-                      <form onSubmit={handleSendMessage} className="flex space-x-4">
-                        <input
-                          type="text"
-                          value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
-                          placeholder="Type your message..."
-                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        />
-                        <button
-                          type="submit"
-                          disabled={!newMessage.trim() || sendMessageMutation.isLoading}
-                          className="px-6 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg transition-colors duration-200 disabled:opacity-50 flex items-center space-x-2"
-                        >
-                          <Send className="h-4 w-4" />
-                          <span>Send</span>
-                        </button>
-                      </form>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-center py-12">
-                    <MessageCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <p className="text-gray-500">Chat is disabled for this hangout</p>
-                  </div>
-                )}
-              </div>
+                  ))}
+                </div>
+              </motion.div>
             )}
 
-            {activeTab === 'details' && (
-              <div className="space-y-6">
-                {/* Special Requests */}
-                {hangout.specialRequests && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Special Requests</h3>
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                      <p className="text-amber-800">{hangout.specialRequests}</p>
+            {/* Participants */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+            >
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                <Users size={20} />
+                <span>Participants ({hangout.participants?.length || 0}/{hangout.maxParticipants})</span>
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {hangout.participants?.map((participant) => (
+                  <div key={participant._id || participant} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
+                    <div className="h-10 w-10 bg-primary-100 rounded-full flex items-center justify-center">
+                      <User size={20} className="text-primary-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">
+                        {participant.name || participant.email || 'Anonymous'}
+                        {participant._id === hangout.organizerId && (
+                          <span className="ml-2 text-xs bg-primary-100 text-primary-800 px-2 py-1 rounded">
+                            Organizer
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {participant.email || 'No email'}
+                      </p>
                     </div>
                   </div>
-                )}
-
-                {/* Hangout History */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Hangout Timeline</h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                        <Calendar className="h-4 w-4 text-primary-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">Hangout Created</p>
-                        <p className="text-sm text-gray-500">
-                          {new Date(hangout.createdAt).toLocaleDateString('en-US', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                        <Clock className="h-4 w-4 text-green-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">Scheduled For</p>
-                        <p className="text-sm text-gray-500">{date} at {time}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Additional Info */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Information</h3>
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Visibility</span>
-                      <span className="text-gray-900 font-medium">
-                        {hangout.isPrivate ? 'Private' : 'Public'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Chat Enabled</span>
-                      <span className="text-gray-900 font-medium">
-                        {hangout.chatEnabled ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Max Participants</span>
-                      <span className="text-gray-900 font-medium">
-                        {hangout.maxParticipants || 'Unlimited'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
+            </motion.div>
+
+            {/* Join Requests (Organizer Only) */}
+            {isUserOrganizer && joinRequests.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+              >
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                  Join Requests ({joinRequests.length})
+                </h2>
+                <div className="space-y-4">
+                  {joinRequests.map((request) => (
+                    <div key={request._id} className="p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-medium text-gray-900">
+                            {request.user?.name || request.user?.email || 'Anonymous User'}
+                          </h3>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {request.user?.email}
+                          </p>
+                          {request.message && (
+                            <p className="text-sm text-gray-700 mt-2 italic">
+                              "{request.message}"
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-500 mt-2">
+                            Requested {new Date(request.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex space-x-2 ml-4">
+                          <button
+                            onClick={() => approveRequestMutation.mutate({ 
+                              hangoutId: id, 
+                              requestId: request._id 
+                            })}
+                            disabled={approveRequestMutation.isLoading}
+                            className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button
+                            onClick={() => rejectRequestMutation.mutate({ 
+                              hangoutId: id, 
+                              requestId: request._id 
+                            })}
+                            disabled={rejectRequestMutation.isLoading}
+                            className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
             )}
           </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Hangout Stats */}
+            {stats && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Statistics</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total Participants</span>
+                    <span className="font-medium">{stats.totalParticipants}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Accepted Invites</span>
+                    <span className="font-medium text-green-600">{stats.acceptedInvites}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Declined Invites</span>
+                    <span className="font-medium text-red-600">{stats.declinedInvites}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Tentative Responses</span>
+                    <span className="font-medium text-yellow-600">{stats.tentativeInvites}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Pending Responses</span>
+                    <span className="font-medium text-gray-600">{stats.pendingInvites}</span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Organizer Info */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+            >
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Organizer</h3>
+              <div className="flex items-center space-x-3">
+                <div className="h-12 w-12 bg-primary-100 rounded-full flex items-center justify-center">
+                  <User size={24} className="text-primary-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">
+                    {hangout.organizer?.name || 'Anonymous Organizer'}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {hangout.organizer?.email}
+                  </p>
+                </div>
+              </div>
+              <button className="mt-4 w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center space-x-2 transition-colors">
+                <MessageCircle size={16} />
+                <span>Send Message</span>
+              </button>
+            </motion.div>
+
+            {/* Quick Info */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+            >
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Info</h3>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3 text-sm">
+                  <Calendar size={16} className="text-gray-400" />
+                  <span className="text-gray-600">Date:</span>
+                  <span className="font-medium">{formatDate(hangout.date)}</span>
+                </div>
+                <div className="flex items-center space-x-3 text-sm">
+                  <Clock size={16} className="text-gray-400" />
+                  <span className="text-gray-600">Time:</span>
+                  <span className="font-medium">{formatTime(hangout.time)}</span>
+                </div>
+                <div className="flex items-center space-x-3 text-sm">
+                  <ClockIcon size={16} className="text-gray-400" />
+                  <span className="text-gray-600">Duration:</span>
+                  <span className="font-medium">{hangout.duration} hours</span>
+                </div>
+                <div className="flex items-center space-x-3 text-sm">
+                  <Users size={16} className="text-gray-400" />
+                  <span className="text-gray-600">Category:</span>
+                  <span className="font-medium">{hangout.category}</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </div>
-      </section>
+
+        {/* Invite Modal */}
+        <AnimatePresence>
+          {showInviteModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            >
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="bg-white rounded-xl shadow-xl max-w-md w-full p-6"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Invite Friends</h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                      <input
+                        type="email"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        placeholder="friend@example.com"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Phone Number (Optional)
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                      <input
+                        type="tel"
+                        value={invitePhone}
+                        onChange={(e) => setInvitePhone(e.target.value)}
+                        placeholder="+221 XX XXX XX XX"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex space-x-3 mt-6">
+                  <button
+                    onClick={() => setShowInviteModal(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSendInvitation}
+                    disabled={sendInvitationsMutation.isLoading || (!inviteEmail.trim() && !invitePhone.trim())}
+                    className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {sendInvitationsMutation.isLoading ? 'Sending...' : 'Send Invite'}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Join Request Modal */}
+        <AnimatePresence>
+          {showJoinRequestModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            >
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="bg-white rounded-xl shadow-xl max-w-md w-full p-6"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Request to Join</h3>
+                <p className="text-gray-600 mb-4">
+                  This hangout requires approval. Send a message to the organizer explaining why you'd like to join.
+                </p>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Message (Optional)
+                  </label>
+                  <textarea
+                    value={joinRequestMessage}
+                    onChange={(e) => setJoinRequestMessage(e.target.value)}
+                    placeholder="Hi! I'd love to join this hangout because..."
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    maxLength={200}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {joinRequestMessage.length}/200 characters
+                  </p>
+                </div>
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setShowJoinRequestModal(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleJoinRequest}
+                    disabled={requestJoinMutation.isLoading}
+                    className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {requestJoinMutation.isLoading ? 'Sending...' : 'Send Request'}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 };
