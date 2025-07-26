@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from 'react-query';
 import { 
@@ -24,6 +24,8 @@ import { toast } from 'react-hot-toast';
 const CreateHangoutPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const preSelectedPlace = location.state?.preSelectedPlace;
   
   const [formData, setFormData] = useState({
     title: '',
@@ -36,7 +38,7 @@ const CreateHangoutPage = () => {
     requireApproval: false,
     category: 'Social',
     tags: [],
-    places: [],
+    places: preSelectedPlace ? [preSelectedPlace] : [],
     invitations: []
   });
 

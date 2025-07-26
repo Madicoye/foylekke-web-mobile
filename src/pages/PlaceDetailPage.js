@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from 'react-query';
@@ -26,7 +26,12 @@ import {
   CreditCard,
   ShoppingBag,
   Music,
-  Coffee
+  Coffee,
+  ThumbsUp,
+  ThumbsDown,
+  Menu,
+  Plus,
+  UserPlus
 } from 'lucide-react';
 import { placesAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -44,6 +49,9 @@ const PlaceDetailPage = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [votes, setVotes] = useState({ upvotes: 0, downvotes: 0, userVote: null });
+  const [isVoting, setIsVoting] = useState(false);
+  const [showCreateHangoutModal, setShowCreateHangoutModal] = useState(false);
 
   // Fetch place details
   const { data: place, isLoading, error } = useQuery(
@@ -66,6 +74,50 @@ const PlaceDetailPage = () => {
       enabled: !!place
     }
   );
+
+  // Load votes when place is loaded
+  useEffect(() => {
+    if (place?._id) {
+      loadVotes();
+    }
+  }, [place?._id]);
+
+  const loadVotes = async () => {
+    try {
+      const votesData = await placesAPI.getPlaceVotes(place._id);
+      setVotes(votesData);
+    } catch (error) {
+      console.error('Error loading votes:', error);
+      setVotes({ upvotes: 0, downvotes: 0, userVote: null });
+    }
+  };
+
+  const handleVote = async (voteType) => {
+    if (!user) {
+      toast.error('Please log in to vote');
+      return;
+    }
+
+    if (isVoting) return;
+
+    setIsVoting(true);
+    try {
+      if (votes.userVote === voteType) {
+        await placesAPI.removeVote(place._id);
+        await loadVotes();
+        toast.success('Vote removed');
+      } else {
+        await placesAPI.voteOnPlace(place._id, voteType);
+        await loadVotes();
+        toast.success(`${voteType === 'upvote' ? 'Upvoted' : 'Downvoted'} successfully`);
+      }
+    } catch (error) {
+      console.error('Error voting:', error);
+      toast.error('Failed to vote. Please try again.');
+    } finally {
+      setIsVoting(false);
+    }
+  };
 
   const handleFavoriteClick = () => {
     if (!isAuthenticated) {
@@ -91,6 +143,24 @@ const PlaceDetailPage = () => {
       navigator.clipboard.writeText(window.location.href);
       toast.success('Link copied to clipboard!');
     }
+  };
+
+  const handleCreateHangout = () => {
+    if (!user) {
+      toast.error('Please log in to create hangouts');
+      return;
+    }
+    // Navigate to hangout creation with this place pre-selected
+    navigate('/hangouts/create', { 
+      state: { 
+        preSelectedPlace: {
+          _id: place._id,
+          name: place.name,
+          address: place.address,
+          type: place.type
+        }
+      }
+    });
   };
 
   const getDirectionsUrl = () => {
@@ -329,28 +399,73 @@ const PlaceDetailPage = () => {
                   </div>
                 </div>
 
-                {/* Rating and Price */}
-                <div className="flex items-center space-x-6">
-                  <div className="flex items-center space-x-2">
-                    <div className="flex items-center space-x-1">
-                      <Star size={20} className="text-yellow-400 fill-current" />
-                      <span className="text-lg font-semibold text-gray-900">
-                        {formatRating(rating)}
+                {/* Rating, Price, and Voting */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-6">
+                    <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-1">
+                        <Star size={20} className="text-yellow-400 fill-current" />
+                        <span className="text-lg font-semibold text-gray-900">
+                          {formatRating(rating)}
+                        </span>
+                      </div>
+                      <span className="text-gray-500">
+                        ({reviewCount} review{reviewCount !== 1 ? 's' : ''})
                       </span>
                     </div>
-                    <span className="text-gray-500">
-                      ({reviewCount} review{reviewCount !== 1 ? 's' : ''})
-                    </span>
+                    
+                    {priceInfo && (
+                      <div className="flex items-center space-x-1">
+                        <DollarSign size={16} className={priceInfo.color} />
+                        <span className={`font-medium ${priceInfo.color}`}>
+                          {priceInfo.text}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Menu Available Badge */}
+                    {place.menu && place.menu.length > 0 && (
+                      <div className="flex items-center space-x-1">
+                        <Menu size={16} className="text-blue-600" />
+                        <span className="text-sm font-medium text-blue-600">Menu Available</span>
+                      </div>
+                    )}
                   </div>
-                  
-                  {priceInfo && (
-                    <div className="flex items-center space-x-1">
-                      <DollarSign size={16} className={priceInfo.color} />
-                      <span className={`font-medium ${priceInfo.color}`}>
-                        {priceInfo.text}
+
+                  {/* Voting Section */}
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleVote('upvote')}
+                        disabled={isVoting}
+                        className={`p-2 rounded-full transition-all duration-200 hover:scale-110 ${
+                          votes.userVote === 'upvote' 
+                            ? 'bg-green-100 text-green-600' 
+                            : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
+                        } ${isVoting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <ThumbsUp size={18} className={votes.userVote === 'upvote' ? 'fill-current' : ''} />
+                      </button>
+                      <span className="text-sm font-medium text-green-600 min-w-[1.5rem] text-center">
+                        {votes.upvotes || 0}
+                      </span>
+                      
+                      <button
+                        onClick={() => handleVote('downvote')}
+                        disabled={isVoting}
+                        className={`p-2 rounded-full transition-all duration-200 hover:scale-110 ${
+                          votes.userVote === 'downvote' 
+                            ? 'bg-red-100 text-red-600' 
+                            : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                        } ${isVoting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <ThumbsDown size={18} className={votes.userVote === 'downvote' ? 'fill-current' : ''} />
+                      </button>
+                      <span className="text-sm font-medium text-red-600 min-w-[1.5rem] text-center">
+                        {votes.downvotes || 0}
                       </span>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
 
@@ -439,6 +554,14 @@ const PlaceDetailPage = () => {
                   <span>Get Directions</span>
                 </a>
                 
+                <button
+                  onClick={handleCreateHangout}
+                  className="flex items-center justify-center space-x-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+                >
+                  <UserPlus size={20} />
+                  <span>Create Hangout</span>
+                </button>
+                
                 {place.contact?.phone && (
                   <a
                     href={`tel:${place.contact.phone}`}
@@ -475,10 +598,11 @@ const PlaceDetailPage = () => {
             <nav className="flex space-x-8">
               {[
                 { id: 'overview', label: 'Overview', icon: MapPin },
+                { id: 'menu', label: 'Menu', icon: Menu, show: place.menu && place.menu.length > 0 },
                 { id: 'hours', label: 'Hours & Info', icon: Clock },
                 { id: 'features', label: 'Features', icon: Star },
                 { id: 'reviews', label: 'Reviews', icon: Users }
-              ].map(tab => {
+              ].filter(tab => tab.show !== false).map(tab => {
                 const Icon = tab.icon;
                 return (
                   <button
@@ -526,6 +650,77 @@ const PlaceDetailPage = () => {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {activeTab === 'menu' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">Menu</h3>
+                  {place.menu && place.menu.length > 0 ? (
+                    <div className="space-y-6">
+                      {place.menu.map((category, categoryIndex) => (
+                        <div key={categoryIndex} className="bg-gray-50 rounded-lg p-6">
+                          <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                            <Utensils size={20} className="text-primary-600" />
+                            <span>{category.category || 'Menu Items'}</span>
+                          </h4>
+                          <div className="grid gap-4">
+                            {category.items?.map((item, itemIndex) => (
+                              <div key={itemIndex} className="bg-white rounded-lg p-4 border border-gray-200">
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
+                                    <h5 className="font-medium text-gray-900">{item.name}</h5>
+                                    {item.description && (
+                                      <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                                    )}
+                                    {item.ingredients && item.ingredients.length > 0 && (
+                                      <div className="mt-2">
+                                        <p className="text-xs text-gray-500">
+                                          Ingredients: {item.ingredients.join(', ')}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {item.price && (
+                                    <div className="ml-4 flex-shrink-0">
+                                      <span className="text-lg font-semibold text-primary-600">
+                                        {typeof item.price === 'number' 
+                                          ? `${item.price.toLocaleString()} FCFA` 
+                                          : item.price
+                                        }
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                                {item.tags && item.tags.length > 0 && (
+                                  <div className="mt-3 flex flex-wrap gap-1">
+                                    {item.tags.map((tag, tagIndex) => (
+                                      <span
+                                        key={tagIndex}
+                                        className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs"
+                                      >
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Menu size={48} className="text-gray-400 mx-auto mb-4" />
+                      <h4 className="text-lg font-semibold text-gray-900 mb-2">No Menu Available</h4>
+                      <p className="text-gray-600">
+                        This place hasn't uploaded their menu yet.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
