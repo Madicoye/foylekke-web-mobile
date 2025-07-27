@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  MapPin, 
-  Clock, 
-  Phone, 
+import {
+  MapPin,
+  Clock,
+  Phone,
   Heart,
   TrendingUp,
   Globe,
@@ -17,38 +17,32 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { placesAPI } from '../../services/api';
 import StarRating from '../ui/StarRating';
+import { useQueryClient } from 'react-query';
 import { getPlaceTypeConfig } from '../../config/placeTypes';
-import { getImageUrls } from '../../utils/imageUtils';
+import { getCuisineTypeConfig } from '../../config/cuisineTypes';
+import { 
+  getImageUrls, 
+  hasValidImages, 
+  getDefaultImageConfig, 
+  createImageErrorHandler 
+} from '../../utils/imageUtils';
 import { toast } from 'react-hot-toast';
 
 const PlaceCard = ({ place, viewMode = 'grid' }) => {
   const { user, toggleFavorite } = useAuth();
-  const [votes, setVotes] = useState({ upvotes: 0, downvotes: 0, userVote: null });
+  const queryClient = useQueryClient();
+  const [votes, setVotes] = useState({
+    upvotes: place.upvoteCount || 0,
+    downvotes: place.downvoteCount || 0,
+    userVote: place.userVote || null
+  });
   const [isVoting, setIsVoting] = useState(false);
   const isFavorite = user?.favorites?.includes(place._id);
-
-  // Load votes on component mount
-  useEffect(() => {
-    if (place._id) {
-      loadVotes();
-    }
-  }, [place._id]);
-
-  const loadVotes = async () => {
-    try {
-      const votesData = await placesAPI.getPlaceVotes(place._id);
-      setVotes(votesData);
-    } catch (error) {
-      console.error('Error loading votes:', error);
-      // Set default values if API call fails
-      setVotes({ upvotes: 0, downvotes: 0, userVote: null });
-    }
-  };
 
   const handleVote = async (voteType, e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (!user) {
       toast.error('Please log in to vote');
       return;
@@ -60,13 +54,35 @@ const PlaceCard = ({ place, viewMode = 'grid' }) => {
     try {
       // If user already voted the same way, remove the vote
       if (votes.userVote === voteType) {
-        await placesAPI.removeVote(place._id);
-        await loadVotes();
+        await placesAPI.voteOnPlace(place._id, 'remove');
+        setVotes(prev => ({
+          ...prev,
+          [voteType === 'upvote' ? 'upvotes' : 'downvotes']: prev[voteType === 'upvote' ? 'upvotes' : 'downvotes'] - 1,
+          userVote: null
+        }));
         toast.success('Vote removed');
       } else {
         // Otherwise, add/change the vote
         await placesAPI.voteOnPlace(place._id, voteType);
-        await loadVotes();
+        
+        // Update local state optimistically
+        setVotes(prev => {
+          const newVotes = { ...prev };
+          
+          // Remove previous vote if exists
+          if (prev.userVote) {
+            const prevVoteKey = prev.userVote === 'upvote' ? 'upvotes' : 'downvotes';
+            newVotes[prevVoteKey] = prev[prevVoteKey] - 1;
+          }
+          
+          // Add new vote
+          const newVoteKey = voteType === 'upvote' ? 'upvotes' : 'downvotes';
+          newVotes[newVoteKey] = prev[newVoteKey] + 1;
+          newVotes.userVote = voteType;
+          
+          return newVotes;
+        });
+        
         toast.success(`${voteType === 'upvote' ? 'Upvoted' : 'Downvoted'} successfully`);
       }
     } catch (error) {
@@ -98,12 +114,16 @@ const PlaceCard = ({ place, viewMode = 'grid' }) => {
   };
 
   const imageUrls = getImageUrls(place);
+  const hasImages = hasValidImages(place);
+  const defaultImageConfig = getDefaultImageConfig(place.type);
 
-  const handleFavoriteClick = (e) => {
+  const handleFavoriteClick = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     if (user) {
-      toggleFavorite(place._id);
+      await toggleFavorite(place._id);
+      // Invalidate favorites query to refresh the profile page
+      queryClient.invalidateQueries(['favoritePlaces']);
     }
   };
 
@@ -128,19 +148,10 @@ const PlaceCard = ({ place, viewMode = 'grid' }) => {
     return levels[priceLevel.toLowerCase()] || { text: priceLevel, color: 'text-gray-600', icon: '$' };
   };
 
-  const getDefaultImage = (type) => {
-    const config = getPlaceTypeConfig(type);
-    return {
-      icon: config?.icon || '📍',
-      gradient: 'from-primary-100 to-accent-100'
-    };
-  };
-
   const hasMenu = place.menu && place.menu.length > 0;
   const rating = place.ratings?.appRating || place.ratings?.googleRating || 0;
   const reviewCount = place.ratings?.reviewCount || 0;
   const priceInfo = formatPriceLevel(place.priceRange);
-  const defaultImg = getDefaultImage(place.type);
 
   // Voting component for reuse
   const VotingSection = ({ className = "" }) => (
@@ -189,22 +200,19 @@ const PlaceCard = ({ place, viewMode = 'grid' }) => {
             <div className="flex">
               {/* Image Section - List View */}
               <div className="relative w-48 h-32 overflow-hidden flex-shrink-0">
-                {imageUrls && imageUrls.length > 0 ? (
+                {hasImages && imageUrls.length > 0 ? (
                   <img
                     src={imageUrls[0]}
                     alt={place.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
-                    }}
+                    onError={createImageErrorHandler(place.type)}
                   />
                 ) : null}
                 
                 <div 
-                  className={`w-full h-full bg-gradient-to-br ${defaultImg.gradient} flex items-center justify-center ${imageUrls && imageUrls.length > 0 ? 'hidden' : 'flex'}`}
+                  className={`fallback-image w-full h-full bg-gradient-to-br ${defaultImageConfig.gradient} flex items-center justify-center ${hasImages && imageUrls.length > 0 ? 'hidden' : 'flex'}`}
                 >
-                  <span className="text-2xl">{defaultImg.icon}</span>
+                  <span className="text-2xl">{defaultImageConfig.icon}</span>
                 </div>
                 
                 {/* Type Badge */}
@@ -316,23 +324,20 @@ const PlaceCard = ({ place, viewMode = 'grid' }) => {
         <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 overflow-hidden border border-gray-100 h-full flex flex-col">
           {/* Image Section - Fixed Height */}
           <div className="relative h-48 overflow-hidden flex-shrink-0">
-            {imageUrls && imageUrls.length > 0 ? (
+            {hasImages && imageUrls.length > 0 ? (
               <img
                 src={imageUrls[0]}
                 alt={place.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
-                }}
+                onError={createImageErrorHandler(place.type)}
               />
             ) : null}
             
             {/* Default Image Placeholder */}
             <div 
-              className={`w-full h-full bg-gradient-to-br ${defaultImg.gradient} flex items-center justify-center ${imageUrls && imageUrls.length > 0 ? 'hidden' : 'flex'}`}
+              className={`fallback-image w-full h-full bg-gradient-to-br ${defaultImageConfig.gradient} flex items-center justify-center ${hasImages && imageUrls.length > 0 ? 'hidden' : 'flex'}`}
             >
-              <span className="text-4xl">{defaultImg.icon}</span>
+              <span className="text-4xl">{defaultImageConfig.icon}</span>
             </div>
             
             {/* Favorite Button */}

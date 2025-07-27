@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 const LoginPage = () => {
   const { login, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -66,7 +67,9 @@ const LoginPage = () => {
 
     setIsLoading(true);
     try {
-      await login(formData.email, formData.password);
+      // Get intended redirect path from URL params or state
+      const redirectPath = location.state?.from || new URLSearchParams(location.search).get('redirect');
+      await login(formData.email, formData.password, redirectPath);
     } catch (error) {
       console.error('Login error:', error);
       // Error handling is done in AuthContext

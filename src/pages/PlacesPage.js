@@ -27,10 +27,9 @@ const PlacesPage = () => {
     type: searchParams.get('type') || '',
     cuisine: searchParams.get('cuisine') || '',
     region: searchParams.get('region') || '',
-    minRating: searchParams.get('minRating') || '',
-    priceLevel: searchParams.get('priceLevel') || '',
-    sortBy: searchParams.get('sortBy') || 'rating',
-    sortOrder: searchParams.get('sortOrder') || 'desc'
+    rating: searchParams.get('rating') || '',
+    priceRange: searchParams.get('priceRange') || '',
+    sort: searchParams.get('sort') || 'rating'
   });
 
   const itemsPerPage = 12;
@@ -57,6 +56,7 @@ const PlacesPage = () => {
     }
   );
 
+  console.log(placesData);
   const places = placesData?.places || placesData || [];
   const totalPlaces = placesData?.pagination?.total || placesData?.total || places.length;
   const totalPages = Math.ceil(totalPlaces / itemsPerPage);
@@ -70,15 +70,18 @@ const PlacesPage = () => {
     handleFilterChange({ search: searchTerm });
   };
 
-  const handleSortChange = (sortBy, sortOrder = 'desc') => {
-    handleFilterChange({ sortBy, sortOrder });
+  const handleSortChange = (sort) => {
+    handleFilterChange({ sort });
   };
 
   const sortOptions = [
-    { value: 'rating', label: 'Rating', order: 'desc' },
-    { value: 'name', label: 'Name', order: 'asc' },
-    { value: 'reviewCount', label: 'Most Reviewed', order: 'desc' },
-    { value: 'createdAt', label: 'Newest', order: 'desc' }
+    { value: 'rating', label: 'Rating' },
+    { value: 'votes', label: 'Most Voted' },
+    { value: 'name', label: 'Name' },
+    { value: 'distance', label: 'Distance' },
+    { value: 'price_low', label: 'Price: Low to High' },
+    { value: 'price_high', label: 'Price: High to Low' },
+    { value: 'relevance', label: 'Most Relevant' }
   ];
 
   const getTypeLabel = (type) => {
@@ -172,11 +175,11 @@ const PlacesPage = () => {
                       setFilters({
                         search: '',
                         type: '',
+                        cuisine: '',
                         region: '',
-                        minRating: '',
-                        priceLevel: '',
-                        sortBy: 'rating',
-                        sortOrder: 'desc'
+                        rating: '',
+                        priceRange: '',
+                        sort: 'rating'
                       });
                     }}
                     className="text-sm text-primary-600 hover:text-primary-700 font-medium"
@@ -190,15 +193,12 @@ const PlacesPage = () => {
               <div className="flex items-center gap-4">
                 {/* Sort Dropdown */}
                 <select
-                  value={`${filters.sortBy}-${filters.sortOrder}`}
-                  onChange={(e) => {
-                    const [sortBy, sortOrder] = e.target.value.split('-');
-                    handleSortChange(sortBy, sortOrder);
-                  }}
+                  value={filters.sort}
+                  onChange={(e) => handleSortChange(e.target.value)}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
                 >
                   {sortOptions.map((option) => (
-                    <option key={option.value} value={`${option.value}-${option.order}`}>
+                    <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}

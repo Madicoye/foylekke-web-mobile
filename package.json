@@ -12,13 +12,13 @@
     "@capacitor/core": "^7.4.2",
     "@capacitor/geolocation": "^7.1.4",
     "@capacitor/ios": "^7.4.2",
-    "@capacitor/preferences": "^7.0.1",
-    "@capacitor/push-notifications": "^7.0.1",
-    "@capacitor/splash-screen": "^7.0.1",
-    "@capacitor/status-bar": "^7.0.1",
     "@capacitor/keyboard": "^7.0.1",
     "@capacitor/network": "^7.0.1",
+    "@capacitor/preferences": "^7.0.1",
+    "@capacitor/push-notifications": "^7.0.1",
     "@capacitor/share": "^7.0.1",
+    "@capacitor/splash-screen": "^7.0.1",
+    "@capacitor/status-bar": "^7.0.1",
     "@heroicons/react": "^2.2.0",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
@@ -28,6 +28,7 @@
     "framer-motion": "^10.12.16",
     "lucide-react": "^0.263.1",
     "mapbox-gl": "^2.15.0",
+    "puppeteer": "^24.15.0",
     "react": "^18.2.0",
     "react-datepicker": "^4.16.0",
     "react-dom": "^18.2.0",
@@ -67,7 +68,9 @@
     "cap:serve": "npm run build && npx cap sync && npx cap serve",
     "cap:update": "npx cap update",
     "ios:dev": "npm run build && npx cap sync ios && npx cap open ios",
-    "android:dev": "npm run build && npx cap sync android && npx cap open android"
+    "android:dev": "npm run build && npx cap sync android && npx cap open android",
+    "logos:generate": "node scripts/generate-logos.js",
+    "logos:open": "open logo-export.html"
   },
   "eslintConfig": {
     "extends": [

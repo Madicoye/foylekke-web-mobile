@@ -16,22 +16,64 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import SearchModal from '../search/SearchModal';
 import DemoModeToggle from '../ads/DemoModeToggle';
+import NotificationBell from '../notifications/NotificationBell';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  const navItems = [
-    { name: 'Home', path: '/', icon: Home },
-    { name: 'Places', path: '/places', icon: MapPin },
-    { name: 'Hangouts', path: '/hangouts', icon: Users },
-  ];
+  // Role-based navigation items
+  const getNavItems = () => {
+    const baseItems = [
+      { name: 'Home', path: '/', icon: Home },
+      { name: 'Places', path: '/places', icon: MapPin },
+      { name: 'Hangouts', path: '/hangouts', icon: Users },
+    ];
+
+    if (!isAuthenticated) return baseItems;
+
+    // Add role-specific items
+    const roleSpecificItems = [];
+    
+    if (user?.role === 'admin') {
+      roleSpecificItems.push({
+        name: 'Admin Dashboard',
+        path: '/admin',
+        icon: Settings,
+        roleSpecific: true
+      });
+    }
+    
+    if (user?.role === 'advertiser') {
+      roleSpecificItems.push({
+        name: 'Ad Dashboard',
+        path: '/advertiser',
+        icon: Settings,
+        roleSpecific: true
+      });
+    }
+    
+    if (user?.role === 'business') {
+      roleSpecificItems.push({
+        name: 'Restaurant Dashboard',
+        path: '/restaurant',
+        icon: Settings,
+        roleSpecific: true
+      });
+    }
+
+    return [...baseItems, ...roleSpecificItems];
+  };
+
+  const navItems = getNavItems();
 
   const handleLogout = () => {
     logout();
-    setIsMenuOpen(false);
+    setIsUserMenuOpen(false);
+    setIsMobileMenuOpen(false);
   };
 
   return (
@@ -58,18 +100,29 @@ const Navbar = () => {
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
+                const isRoleSpecific = item.roleSpecific;
+                
                 return (
                   <Link
                     key={item.name}
                     to={item.path}
                     className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition-colors duration-200 ${
                       isActive
-                        ? 'bg-primary-100 text-primary-700'
-                        : 'text-gray-600 hover:text-primary-600 hover:bg-primary-50'
+                        ? isRoleSpecific 
+                          ? 'bg-accent-100 text-accent-700' 
+                          : 'bg-primary-100 text-primary-700'
+                        : isRoleSpecific
+                          ? 'text-accent-600 hover:text-accent-700 hover:bg-accent-50'
+                          : 'text-gray-600 hover:text-primary-600 hover:bg-primary-50'
                     }`}
                   >
                     <Icon size={18} />
                     <span className="font-medium">{item.name}</span>
+                    {isRoleSpecific && (
+                      <span className="ml-1 text-xs bg-gradient-to-r from-accent-500 to-accent-600 text-white px-2 py-0.5 rounded-full font-medium">
+                        {user?.role}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
@@ -92,13 +145,16 @@ const Navbar = () => {
                 <Search size={20} />
               </motion.button>
 
+              {/* Notifications */}
+              <NotificationBell />
+
               {/* User Menu */}
               {isAuthenticated ? (
                 <div className="relative">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                     className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
                   >
                     {user?.profilePicture ? (
@@ -117,41 +173,58 @@ const Navbar = () => {
                     </span>
                   </motion.button>
 
-                  {/* Dropdown Menu */}
-                  {isMenuOpen && (
+                  {/* Dropdown Menu - User Actions Only */}
+                  {isUserMenuOpen && (
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2"
+                      className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
                     >
+                      {/* User Info Header */}
+                      <div className="px-4 py-2 border-b border-gray-100">
+                        <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+                        <p className="text-xs text-gray-500">{user?.email}</p>
+                        {user?.role !== 'user' && (
+                          <p className="text-xs text-accent-600 font-medium capitalize">{user?.role}</p>
+                        )}
+                      </div>
+
+                      {/* Quick Actions */}
                       <Link
                         to="/profile"
-                        onClick={() => setIsMenuOpen(false)}
+                        onClick={() => setIsUserMenuOpen(false)}
                         className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200"
                       >
                         <User size={16} />
-                        <span>Profile</span>
+                        <span>My Profile</span>
                       </Link>
+                      
                       <Link
                         to="/hangouts/create"
-                        onClick={() => setIsMenuOpen(false)}
+                        onClick={() => setIsUserMenuOpen(false)}
                         className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200"
                       >
                         <Plus size={16} />
                         <span>Create Hangout</span>
                       </Link>
+
                       <Link
                         to="/config"
-                        onClick={() => setIsMenuOpen(false)}
+                        onClick={() => setIsUserMenuOpen(false)}
                         className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200"
                       >
                         <Settings size={16} />
-                        <span>Configuration</span>
+                        <span>Settings</span>
                       </Link>
+
+                      {/* Divider */}
+                      <div className="border-t border-gray-100 my-1"></div>
+
+                      {/* Logout */}
                       <button
                         onClick={handleLogout}
-                        className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200 w-full text-left"
+                        className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 transition-colors duration-200 w-full text-left"
                       >
                         <LogOut size={16} />
                         <span>Logout</span>
@@ -178,80 +251,156 @@ const Navbar = () => {
 
               {/* Mobile Menu Button */}
               <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="md:hidden p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-200"
               >
-                {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
             </div>
           </div>
 
           {/* Mobile Navigation */}
-          {isMenuOpen && (
+          {isMobileMenuOpen && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               className="md:hidden border-t border-gray-200 py-4"
             >
-              <div className="flex flex-col space-y-2">
-                {/* Demo Mode Toggle for Mobile */}
-                <div className="px-3 py-2">
-                  <DemoModeToggle />
-                </div>
-                
+              <div className="flex flex-col space-y-1">
+                {/* User Info Section (Mobile) */}
+                {isAuthenticated && (
+                  <div className="px-3 py-3 bg-gray-50 rounded-lg mb-3">
+                    <div className="flex items-center space-x-3">
+                      {user?.profilePicture ? (
+                        <img
+                          src={user.profilePicture}
+                          alt={user.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center">
+                          <User size={20} className="text-white" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
+                        <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                        {user?.role !== 'user' && (
+                          <p className="text-xs text-accent-600 font-medium capitalize">{user?.role}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Main Navigation */}
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = location.pathname === item.path;
+                  const isRoleSpecific = item.roleSpecific;
+                  
                   return (
                     <Link
                       key={item.name}
                       to={item.path}
-                      onClick={() => setIsMenuOpen(false)}
-                      className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors duration-200 ${
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors duration-200 ${
                         isActive
-                          ? 'bg-primary-100 text-primary-700'
-                          : 'text-gray-600 hover:text-primary-600 hover:bg-primary-50'
+                          ? isRoleSpecific 
+                            ? 'bg-accent-100 text-accent-700' 
+                            : 'bg-primary-100 text-primary-700'
+                          : isRoleSpecific
+                            ? 'text-accent-600 hover:text-accent-700 hover:bg-accent-50'
+                            : 'text-gray-600 hover:text-primary-600 hover:bg-primary-50'
                       }`}
                     >
-                      <Icon size={18} />
+                      <Icon size={20} />
                       <span className="font-medium">{item.name}</span>
+                      {isRoleSpecific && (
+                        <span className="ml-auto text-xs bg-gradient-to-r from-accent-500 to-accent-600 text-white px-2 py-0.5 rounded-full font-medium">
+                          {user?.role}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}
+
                 {isAuthenticated && (
                   <>
+                    {/* Divider */}
+                    <div className="border-t border-gray-200 my-2"></div>
+                    
+                    {/* User Actions */}
                     <Link
                       to="/profile"
-                      onClick={() => setIsMenuOpen(false)}
-                      className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-200"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center space-x-3 px-3 py-3 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-200"
                     >
-                      <User size={18} />
-                      <span className="font-medium">Profile</span>
+                      <User size={20} />
+                      <span className="font-medium">My Profile</span>
                     </Link>
+                    
                     <Link
                       to="/hangouts/create"
-                      onClick={() => setIsMenuOpen(false)}
-                      className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-200"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center space-x-3 px-3 py-3 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-200"
                     >
-                      <Plus size={18} />
+                      <Plus size={20} />
                       <span className="font-medium">Create Hangout</span>
                     </Link>
+
                     <Link
                       to="/config"
-                      onClick={() => setIsMenuOpen(false)}
-                      className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-200"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center space-x-3 px-3 py-3 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-200"
                     >
-                      <Settings size={18} />
-                      <span className="font-medium">Configuration</span>
+                      <Settings size={20} />
+                      <span className="font-medium">Settings</span>
                     </Link>
+
+                    {/* Demo Mode Toggle for Mobile */}
+                    <div className="px-3 py-2">
+                      <DemoModeToggle />
+                    </div>
+
+                    {/* Logout */}
                     <button
                       onClick={handleLogout}
-                      className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-200 w-full text-left"
+                      className="flex items-center space-x-3 px-3 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 w-full text-left"
                     >
-                      <LogOut size={18} />
+                      <LogOut size={20} />
                       <span className="font-medium">Logout</span>
                     </button>
+                  </>
+                )}
+
+                {/* Login/Register for non-authenticated users */}
+                {!isAuthenticated && (
+                  <>
+                    <div className="px-3 py-2">
+                      <DemoModeToggle />
+                    </div>
+                    
+                    <div className="border-t border-gray-200 my-2"></div>
+                    
+                    <Link
+                      to="/login"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center space-x-3 px-3 py-3 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-200"
+                    >
+                      <User size={20} />
+                      <span className="font-medium">Login</span>
+                    </Link>
+                    
+                    <Link
+                      to="/register"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center space-x-3 px-3 py-3 bg-primary-600 text-white hover:bg-primary-700 rounded-lg transition-colors duration-200"
+                    >
+                      <Plus size={20} />
+                      <span className="font-medium">Sign Up</span>
+                    </Link>
                   </>
                 )}
               </div>

@@ -21,17 +21,21 @@ import {
   EyeOff,
   AlertCircle,
   Check,
-  Trash2
+  Trash2,
+  CheckCircle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useQuery } from 'react-query';
+import { useQuery, useQueryClient } from 'react-query';
 import { placesAPI, hangoutsAPI } from '../services/api';
 import { toast } from 'react-hot-toast';
 import PlaceCard from '../components/places/PlaceCard';
+import HangoutCard from '../components/hangouts/HangoutCard';
+import ReviewsList from '../components/reviews/ReviewsList';
 import { Link } from 'react-router-dom';
 
 const ProfilePage = () => {
   const { user, updateProfile, logout, isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -54,18 +58,30 @@ const ProfilePage = () => {
   });
 
   // Fetch user's favorite places
-  const { data: favoritePlaces, isLoading: favoritesLoading } = useQuery(
+  const { data: favoritePlaces, isLoading: favoritesLoading, error: favoritesError } = useQuery(
     ['favoritePlaces', user?.favorites],
-    () => {
+    async () => {
       if (user?.favorites && user.favorites.length > 0) {
-        return Promise.all(
-          user.favorites.map(id => placesAPI.getPlace(id))
-        );
+        try {
+          const places = await Promise.all(
+            user.favorites.map(id => placesAPI.getPlace(id).catch(err => {
+              console.warn(`Failed to fetch place ${id}:`, err);
+              return null; // Return null for failed requests
+            }))
+          );
+          // Filter out null values (failed requests)
+          return places.filter(place => place !== null);
+        } catch (error) {
+          console.error('Error fetching favorite places:', error);
+          return [];
+        }
       }
       return [];
     },
     {
-      enabled: !!user?.favorites
+      enabled: !!user?.favorites && isAuthenticated,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      cacheTime: 10 * 60 * 1000, // 10 minutes
     }
   );
 
@@ -520,46 +536,28 @@ const ProfilePage = () => {
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">My Hangouts</h2>
                 {hangoutsLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                      <div key={i} className="bg-gray-200 rounded-lg h-24 animate-pulse"></div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="bg-gray-200 rounded-xl h-80 animate-pulse"></div>
                     ))}
                   </div>
                 ) : userHangouts && userHangouts.length > 0 ? (
-                  <div className="space-y-6">
+                  <div className="space-y-8">
                     {/* Upcoming Hangouts */}
                     {upcomingHangouts.length > 0 && (
                       <div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">Upcoming</h3>
-                        <div className="space-y-4">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                          <Calendar className="h-5 w-5 mr-2 text-blue-600" />
+                          Upcoming ({upcomingHangouts.length})
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                           {upcomingHangouts.map((hangout) => (
-                            <Link
+                            <HangoutCard
                               key={hangout._id}
-                              to={`/hangouts/${hangout._id}`}
-                              className="block bg-blue-50 border border-blue-200 rounded-lg p-4 hover:bg-blue-100 transition-colors duration-200"
-                            >
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <h4 className="font-medium text-gray-900">{hangout.title}</h4>
-                                  <p className="text-sm text-gray-600">{hangout.place?.name}</p>
-                                  <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                                    <div className="flex items-center space-x-1">
-                                      <Calendar className="h-4 w-4" />
-                                      <span>{formatDate(hangout.dateTime)}</span>
-                                    </div>
-                                    <div className="flex items-center space-x-1">
-                                      <Users className="h-4 w-4" />
-                                      <span>{hangout.participants?.length || 0} participants</span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    {hangout.status}
-                                  </span>
-                                </div>
-                              </div>
-                            </Link>
+                              hangout={hangout}
+                              onFavorite={() => {}} // Placeholder - could implement hangout favoriting
+                              isFavorited={false}
+                            />
                           ))}
                         </div>
                       </div>
@@ -568,36 +566,18 @@ const ProfilePage = () => {
                     {/* Past Hangouts */}
                     {pastHangouts.length > 0 && (
                       <div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">Past</h3>
-                        <div className="space-y-4">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                          <CheckCircle className="h-5 w-5 mr-2 text-gray-600" />
+                          Past ({pastHangouts.length})
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                           {pastHangouts.map((hangout) => (
-                            <Link
+                            <HangoutCard
                               key={hangout._id}
-                              to={`/hangouts/${hangout._id}`}
-                              className="block bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-gray-100 transition-colors duration-200"
-                            >
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <h4 className="font-medium text-gray-900">{hangout.title}</h4>
-                                  <p className="text-sm text-gray-600">{hangout.place?.name}</p>
-                                  <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                                    <div className="flex items-center space-x-1">
-                                      <Calendar className="h-4 w-4" />
-                                      <span>{formatDate(hangout.dateTime)}</span>
-                                    </div>
-                                    <div className="flex items-center space-x-1">
-                                      <Users className="h-4 w-4" />
-                                      <span>{hangout.participants?.length || 0} participants</span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                    {hangout.status}
-                                  </span>
-                                </div>
-                              </div>
-                            </Link>
+                              hangout={hangout}
+                              onFavorite={() => {}} // Placeholder - could implement hangout favoriting
+                              isFavorited={false}
+                            />
                           ))}
                         </div>
                       </div>
@@ -621,18 +601,13 @@ const ProfilePage = () => {
 
             {activeTab === 'reviews' && (
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">My Reviews</h2>
-                <div className="text-center py-12">
-                  <Star className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No reviews yet</h3>
-                  <p className="text-gray-600 mb-4">Share your experiences by reviewing places you've visited!</p>
-                  <Link
-                    to="/places"
-                    className="inline-flex items-center px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors duration-200"
-                  >
-                    Explore Places
-                  </Link>
-                </div>
+                <ReviewsList
+                  userId={user._id}
+                  showPlaceNames={true}
+                  title="My Reviews"
+                  emptyMessage="You haven't written any reviews yet"
+                  compact={true}
+                />
               </div>
             )}
           </div>

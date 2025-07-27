@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foylekke Logo Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: #f9fafb;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #6b7280;
+        }
+
+        .logo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .logo-item {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .logo-preview {
+            margin-bottom: 20px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .logo-info h3 {
+            margin: 0 0 10px 0;
+            color: #1f2937;
+            font-size: 18px;
+        }
+
+        .logo-info p {
+            margin: 0 0 15px 0;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .download-btn {
+            background: linear-gradient(to right, #ed7519, #d946ef);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            transition: opacity 0.2s;
+        }
+
+        .download-btn:hover {
+            opacity: 0.9;
+        }
+
+        .download-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Logo Styles */
+        .foy-lekke-logo-icon {
+            background: linear-gradient(to right, #ed7519, #d946ef);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .foy-lekke-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .foy-lekke-logo-text h1 {
+            margin: 0;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            background: linear-gradient(to right, #ed7519, #d946ef);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Specific sizes */
+        .icon-40 { width: 40px; height: 40px; font-size: 20px; }
+        .icon-64 { width: 64px; height: 64px; font-size: 32px; }
+        .text-20 { font-size: 20px; line-height: 28px; }
+        .text-32 { font-size: 32px; line-height: 40px; }
+
+        .instructions {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-top: 40px;
+        }
+
+        .instructions h2 {
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+
+        .instructions ol {
+            color: #4b5563;
+            line-height: 1.6;
+        }
+
+        .instructions li {
+            margin-bottom: 10px;
+        }
+
+        canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Foylekke Logo Generator</h1>
+            <p>Generate high-quality PNG versions of the Foylekke brand logos</p>
+        </div>
+
+        <div class="logo-grid">
+            <!-- Icon 40x40 -->
+            <div class="logo-item">
+                <div class="logo-preview">
+                    <div class="foy-lekke-logo-icon icon-40" id="logo-icon-40">FL</div>
+                </div>
+                <div class="logo-info">
+                    <h3>Icon Small</h3>
+                    <p>40x40px • For navbar, favicons</p>
+                    <button class="download-btn" onclick="downloadLogo('logo-icon-40', 'foylekke-icon-40x40.png', 40, 40)">
+                        Download PNG
+                    </button>
+                </div>
+            </div>
+
+            <!-- Icon 64x64 -->
+            <div class="logo-item">
+                <div class="logo-preview">
+                    <div class="foy-lekke-logo-icon icon-64" id="logo-icon-64">FL</div>
+                </div>
+                <div class="logo-info">
+                    <h3>Icon Large</h3>
+                    <p>64x64px • For app icons, large favicons</p>
+                    <button class="download-btn" onclick="downloadLogo('logo-icon-64', 'foylekke-icon-64x64.png', 64, 64)">
+                        Download PNG
+                    </button>
+                </div>
+            </div>
+
+            <!-- Full Standard -->
+            <div class="logo-item">
+                <div class="logo-preview">
+                    <div class="foy-lekke-logo" id="logo-full-standard">
+                        <div class="foy-lekke-logo-icon icon-40">FL</div>
+                        <div class="foy-lekke-logo-text">
+                            <h1 class="text-20">foylekke</h1>
+                        </div>
+                    </div>
+                </div>
+                <div class="logo-info">
+                    <h3>Full Logo Standard</h3>
+                    <p>Auto width • For website headers</p>
+                    <button class="download-btn" onclick="downloadLogo('logo-full-standard', 'foylekke-full-standard.png', 200, 50)">
+                        Download PNG
+                    </button>
+                </div>
+            </div>
+
+            <!-- Full Large -->
+            <div class="logo-item">
+                <div class="logo-preview">
+                    <div class="foy-lekke-logo" id="logo-full-large">
+                        <div class="foy-lekke-logo-icon icon-64">FL</div>
+                        <div class="foy-lekke-logo-text">
+                            <h1 class="text-32">foylekke</h1>
+                        </div>
+                    </div>
+                </div>
+                <div class="logo-info">
+                    <h3>Full Logo Large</h3>
+                    <p>Auto width • For banners, marketing</p>
+                    <button class="download-btn" onclick="downloadLogo('logo-full-large', 'foylekke-full-large.png', 300, 80)">
+                        Download PNG
+                    </button>
+                </div>
+            </div>
+
+            <!-- Text Standard -->
+            <div class="logo-item">
+                <div class="logo-preview">
+                    <div class="foy-lekke-logo-text" id="logo-text-standard">
+                        <h1 class="text-20">foylekke</h1>
+                    </div>
+                </div>
+                <div class="logo-info">
+                    <h3>Text Only Standard</h3>
+                    <p>Auto width • For minimal layouts</p>
+                    <button class="download-btn" onclick="downloadLogo('logo-text-standard', 'foylekke-text-standard.png', 150, 30)">
+                        Download PNG
+                    </button>
+                </div>
+            </div>
+
+            <!-- Text Large -->
+            <div class="logo-item">
+                <div class="logo-preview">
+                    <div class="foy-lekke-logo-text" id="logo-text-large">
+                        <h1 class="text-32">foylekke</h1>
+                    </div>
+                </div>
+                <div class="logo-info">
+                    <h3>Text Only Large</h3>
+                    <p>Auto width • For large headers</p>
+                    <button class="download-btn" onclick="downloadLogo('logo-text-large', 'foylekke-text-large.png', 220, 45)">
+                        Download PNG
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h2>📋 How to Use</h2>
+            <ol>
+                <li>Click the "Download PNG" button for each logo you need</li>
+                <li>Save the files to <code>public/images/logos/</code> directory</li>
+                <li>Use the exact filenames shown in the buttons</li>
+                <li>The logos will have transparent backgrounds</li>
+                <li>High-resolution PNGs suitable for web and print</li>
+            </ol>
+            <p><strong>Note:</strong> This tool uses HTML5 Canvas to generate pixel-perfect PNG files with transparent backgrounds.</p>
+        </div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        function downloadLogo(elementId, filename, width, height) {
+            const element = document.getElementById(elementId);
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size with high DPI
+            const scale = 2; // 2x for retina displays
+            canvas.width = width * scale;
+            canvas.height = height * scale;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            ctx.scale(scale, scale);
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Convert element to canvas using html2canvas-like approach
+            html2canvas(element, {
+                canvas: canvas,
+                width: width,
+                height: height,
+                backgroundColor: null, // Transparent
+                scale: scale
+            }).then(() => {
+                // Download the image
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }).catch(error => {
+                console.error('Error generating logo:', error);
+                alert('Error generating logo. Please try the manual method.');
+            });
+        }
+
+        // Simple html2canvas implementation for logos
+        function html2canvas(element, options) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const canvas = options.canvas;
+                    const ctx = canvas.getContext('2d');
+                    const rect = element.getBoundingClientRect();
+                    
+                    // For text elements
+                    if (element.classList.contains('foy-lekke-logo-text')) {
+                        const h1 = element.querySelector('h1');
+                        const text = h1.textContent;
+                        const fontSize = parseInt(window.getComputedStyle(h1).fontSize);
+                        
+                        ctx.font = `700 ${fontSize}px Montserrat`;
+                        
+                        // Create gradient
+                        const gradient = ctx.createLinearGradient(0, 0, options.width, 0);
+                        gradient.addColorStop(0, '#ed7519');
+                        gradient.addColorStop(1, '#d946ef');
+                        
+                        ctx.fillStyle = gradient;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(text, options.width / 2, options.height / 2);
+                    }
+                    
+                    // For icon elements
+                    else if (element.classList.contains('foy-lekke-logo-icon')) {
+                        // Create gradient background
+                        const gradient = ctx.createLinearGradient(0, 0, options.width, 0);
+                        gradient.addColorStop(0, '#ed7519');
+                        gradient.addColorStop(1, '#d946ef');
+                        
+                        ctx.fillStyle = gradient;
+                        ctx.roundRect(0, 0, options.width, options.height, 8);
+                        ctx.fill();
+                        
+                        // Add text
+                        const fontSize = options.width * 0.5;
+                        ctx.font = `700 ${fontSize}px Montserrat`;
+                        ctx.fillStyle = 'white';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('FL', options.width / 2, options.height / 2);
+                    }
+                    
+                    // For full logo
+                    else if (element.classList.contains('foy-lekke-logo')) {
+                        const iconSize = element.querySelector('.foy-lekke-logo-icon').classList.contains('icon-40') ? 40 : 64;
+                        const textSize = element.querySelector('h1').classList.contains('text-20') ? 20 : 32;
+                        
+                        // Draw icon
+                        const gradient1 = ctx.createLinearGradient(0, 0, iconSize, 0);
+                        gradient1.addColorStop(0, '#ed7519');
+                        gradient1.addColorStop(1, '#d946ef');
+                        
+                        ctx.fillStyle = gradient1;
+                        ctx.roundRect(0, (options.height - iconSize) / 2, iconSize, iconSize, 8);
+                        ctx.fill();
+                        
+                        // Add FL text
+                        ctx.font = `700 ${iconSize * 0.5}px Montserrat`;
+                        ctx.fillStyle = 'white';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('FL', iconSize / 2, options.height / 2);
+                        
+                        // Add foylekke text
+                        const gradient2 = ctx.createLinearGradient(iconSize + 8, 0, options.width, 0);
+                        gradient2.addColorStop(0, '#ed7519');
+                        gradient2.addColorStop(1, '#d946ef');
+                        
+                        ctx.font = `700 ${textSize}px Montserrat`;
+                        ctx.fillStyle = gradient2;
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('foylekke', iconSize + 8, options.height / 2);
+                    }
+                    
+                    resolve();
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        }
+
+        // Add roundRect polyfill for older browsers
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius) {
+                this.beginPath();
+                this.moveTo(x + radius, y);
+                this.lineTo(x + width - radius, y);
+                this.arcTo(x + width, y, x + width, y + radius, radius);
+                this.lineTo(x + width, y + height - radius);
+                this.arcTo(x + width, y + height, x + width - radius, y + height, radius);
+                this.lineTo(x + radius, y + height);
+                this.arcTo(x, y + height, x, y + height - radius, radius);
+                this.lineTo(x, y + radius);
+                this.arcTo(x, y, x + radius, y, radius);
+                this.closePath();
+            };
+        }
+    </script>
+</body>
+</html> 

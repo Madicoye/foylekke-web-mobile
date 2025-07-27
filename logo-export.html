@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foy Lekke Logo Export</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: white;
+            padding: 50px;
+            margin: 0;
+        }
+
+        .logo-container {
+            margin-bottom: 100px;
+            display: inline-block;
+            background: white;
+            padding: 30px;
+        }
+
+        /* Logo Icon Badge */
+        .foy-lekke-logo-icon {
+            width: 2.5rem; /* 40px */
+            height: 2.5rem; /* 40px */
+            background: linear-gradient(to right, #ed7519, #d946ef);
+            border-radius: 0.5rem; /* 8px */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        /* Logo Icon Text */
+        .foy-lekke-logo-icon-text {
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 1.25rem; /* 20px */
+            line-height: 1.75rem; /* 28px */
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        /* Full Logo Container */
+        .foy-lekke-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem; /* 8px */
+        }
+
+        /* Logo Text Container */
+        .foy-lekke-logo-text {
+            display: block;
+        }
+
+        /* Main Logo Text */
+        .foy-lekke-logo-title {
+            font-size: 1.25rem; /* 20px */
+            line-height: 1.75rem; /* 28px */
+            font-weight: 700;
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(to right, #ed7519, #d946ef);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+
+        /* Large Logo Variations */
+        .large-icon {
+            width: 4rem; /* 64px */
+            height: 4rem; /* 64px */
+        }
+
+        .large-icon-text {
+            font-size: 2rem; /* 32px */
+            line-height: 2.5rem;
+        }
+
+        .large-title {
+            font-size: 2rem; /* 32px */
+            line-height: 2.5rem;
+        }
+
+        /* Export Labels */
+        .export-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+            font-weight: bold;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        /* White background for clean export */
+        .export-area {
+            background: white;
+            display: inline-block;
+            padding: 20px;
+            margin: 20px;
+            border: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <!-- Icon Only Logo - Standard Size -->
+    <div class="logo-container">
+        <div class="export-label">Icon Only Logo - Standard (40x40px)</div>
+        <div class="export-area" id="icon-standard">
+            <div class="foy-lekke-logo-icon">
+                <span class="foy-lekke-logo-icon-text">FL</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Icon Only Logo - Large Size -->
+    <div class="logo-container">
+        <div class="export-label">Icon Only Logo - Large (64x64px)</div>
+        <div class="export-area" id="icon-large">
+            <div class="foy-lekke-logo-icon large-icon">
+                <span class="foy-lekke-logo-icon-text large-icon-text">FL</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full Logo - Standard Size -->
+    <div class="logo-container">
+        <div class="export-label">Full Logo - Standard</div>
+        <div class="export-area" id="full-standard">
+            <div class="foy-lekke-logo">
+                <div class="foy-lekke-logo-icon">
+                    <span class="foy-lekke-logo-icon-text">FL</span>
+                </div>
+                <div class="foy-lekke-logo-text">
+                    <h1 class="foy-lekke-logo-title">foylekke</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full Logo - Large Size -->
+    <div class="logo-container">
+        <div class="export-label">Full Logo - Large</div>
+        <div class="export-area" id="full-large">
+            <div class="foy-lekke-logo">
+                <div class="foy-lekke-logo-icon large-icon">
+                    <span class="foy-lekke-logo-icon-text large-icon-text">FL</span>
+                </div>
+                <div class="foy-lekke-logo-text">
+                    <h1 class="foy-lekke-logo-title large-title">foylekke</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Text Only Logo - Standard -->
+    <div class="logo-container">
+        <div class="export-label">Text Only Logo - Standard</div>
+        <div class="export-area" id="text-standard">
+            <div class="foy-lekke-logo-text">
+                <h1 class="foy-lekke-logo-title">foylekke</h1>
+            </div>
+        </div>
+    </div>
+
+    <!-- Text Only Logo - Large -->
+    <div class="logo-container">
+        <div class="export-label">Text Only Logo - Large</div>
+        <div class="export-area" id="text-large">
+            <div class="foy-lekke-logo-text">
+                <h1 class="foy-lekke-logo-title large-title">foylekke</h1>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Instructions for manual export
+        console.log(`
+        📸 TO EXPORT AS PNG:
+
+        1. Open Developer Tools (F12)
+        2. Right-click on any logo element
+        3. Select "Inspect Element"
+        4. Right-click on the element in DevTools
+        5. Select "Capture node screenshot"
+
+        OR use browser extensions like:
+        - "GoFullPage" for full page screenshots
+        - "Awesome Screenshot" for element capture
+        - "Nimbus Screenshot" for selective capture
+
+        🎯 RECOMMENDED EXPORT SIZES:
+        - Icon Standard: 40x40px
+        - Icon Large: 64x64px  
+        - Full Logo: Auto width/height
+        - Text Logo: Auto width/height
+
+        🌈 COLORS USED:
+        - Orange: #ed7519
+        - Purple: #d946ef
+        - Font: Montserrat
+        `);
+    </script>
+</body>
+</html> 

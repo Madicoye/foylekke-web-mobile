@@ -1,262 +1,150 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from 'react-query';
 import { 
-  CalendarIcon, 
-  ClockIcon, 
-  MapPinIcon, 
-  UsersIcon, 
-  HeartIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
-  PlusIcon
+  PlusIcon,
+  UsersIcon,
+  CalendarIcon,
+  MapPinIcon,
+  TagIcon
 } from '@heroicons/react/24/outline';
+import { useAuth } from '../contexts/AuthContext';
+import { hangoutsAPI } from '../services/api';
+import { toast } from 'react-hot-toast';
+import HangoutCard from '../components/hangouts/HangoutCard';
 
 const HangoutsPage = () => {
-  const [hangouts, setHangouts] = useState([]);
-  const [filteredHangouts, setFilteredHangouts] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
-  const [showFilters, setShowFilters] = useState(false);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
+  
+  // State for filtering and search
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedTimeFilter, setSelectedTimeFilter] = useState('all');
+  const [showMyHangouts, setShowMyHangouts] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
-  // Dummy hangouts data
-  const dummyHangouts = [
+  // Fetch hangouts data
+  const { 
+    data: hangoutsData, 
+    isLoading: hangoutsLoading, 
+    error: hangoutsError,
+    refetch: refetchHangouts 
+  } = useQuery(
+    ['hangouts', { showMyHangouts }],
+    () => showMyHangouts ? hangoutsAPI.getMyHangouts() : hangoutsAPI.getHangouts(),
     {
-      id: 1,
-      title: "Dakar Food Tour",
-      description: "Let's explore the best restaurants in Dakar together! We'll visit 3-4 places and share our experiences.",
-      place: {
-        name: "Le Teranga",
-        address: "123 Avenue Léopold Sédar Senghor, Dakar"
-      },
-      organizer: {
-        name: "Mariama Diallo",
-        avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400"
-      },
-      participants: [
-        { name: "Mariama Diallo", avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400" },
-        { name: "Amadou Sow", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400" },
-        { name: "Fatou Ndiaye", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400" }
-      ],
-      maxParticipants: 8,
-      currentParticipants: 3,
-      date: "2024-01-20",
-      time: "18:00",
-      duration: 3,
-      category: "Food & Dining",
-      tags: ["food tour", "dakar", "restaurants"],
-      isPublic: true,
-      status: "upcoming",
-      image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800"
-    },
-    {
-      id: 2,
-      title: "Coffee & Conversation",
-      description: "Casual meetup for coffee lovers. Let's discuss our favorite cafes and share recommendations.",
-      place: {
-        name: "La Galette",
-        address: "789 Boulevard de la République, Dakar"
-      },
-      organizer: {
-        name: "Fatou Ndiaye",
-        avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400"
-      },
-      participants: [
-        { name: "Fatou Ndiaye", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400" },
-        { name: "Mariama Diallo", avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400" }
-      ],
-      maxParticipants: 6,
-      currentParticipants: 2,
-      date: "2024-01-16",
-      time: "10:00",
-      duration: 2,
-      category: "Social",
-      tags: ["coffee", "social", "meetup"],
-      isPublic: true,
-      status: "upcoming",
-      image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800"
-    },
-    {
-      id: 3,
-      title: "Seafood Night",
-      description: "Dinner at Chez Loutcha for seafood lovers. Let's enjoy fresh fish and great company!",
-      place: {
-        name: "Chez Loutcha",
-        address: "456 Rue de la Corniche, Dakar"
-      },
-      organizer: {
-        name: "Amadou Sow",
-        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400"
-      },
-      participants: [
-        { name: "Amadou Sow", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400" },
-        { name: "Mariama Diallo", avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400" }
-      ],
-      maxParticipants: 4,
-      currentParticipants: 2,
-      date: "2024-01-18",
-      time: "19:00",
-      duration: 2,
-      category: "Food & Dining",
-      tags: ["seafood", "dinner", "fine dining"],
-      isPublic: false,
-      status: "upcoming",
-      image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=800"
-    },
-    {
-      id: 4,
-      title: "Weekend Beach Day",
-      description: "Relaxing day at the beach with friends. Bring your own food and drinks!",
-      place: {
-        name: "Plage de Ngor",
-        address: "Ngor, Dakar"
-      },
-      organizer: {
-        name: "Mariama Diallo",
-        avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400"
-      },
-      participants: [
-        { name: "Mariama Diallo", avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400" },
-        { name: "Amadou Sow", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400" },
-        { name: "Fatou Ndiaye", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400" }
-      ],
-      maxParticipants: 10,
-      currentParticipants: 3,
-      date: "2024-01-21",
-      time: "14:00",
-      duration: 4,
-      category: "Outdoor",
-      tags: ["beach", "weekend", "relaxation"],
-      isPublic: true,
-      status: "upcoming",
-      image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800"
-    },
-    {
-      id: 5,
-      title: "Museum Visit",
-      description: "Cultural afternoon at the Museum of Black Civilizations. Let's learn together!",
-      place: {
-        name: "Museum of Black Civilizations",
-        address: "Avenue Cheikh Anta Diop, Dakar"
-      },
-      organizer: {
-        name: "Fatou Ndiaye",
-        avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400"
-      },
-      participants: [
-        { name: "Fatou Ndiaye", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400" }
-      ],
-      maxParticipants: 8,
-      currentParticipants: 1,
-      date: "2024-01-25",
-      time: "15:00",
-      duration: 2,
-      category: "Cultural",
-      tags: ["museum", "culture", "education"],
-      isPublic: true,
-      status: "upcoming",
-      image: "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=800"
+      enabled: isAuthenticated,
+      staleTime: 2 * 60 * 1000, // 2 minutes
+      cacheTime: 5 * 60 * 1000, // 5 minutes
+      onError: (error) => {
+        console.error('Failed to fetch hangouts:', error);
+        toast.error('Failed to load hangouts');
+      }
     }
-  ];
+  );
 
-  const categories = [
-    { id: 'all', name: 'All Categories' },
-    { id: 'Food & Dining', name: 'Food & Dining' },
-    { id: 'Social', name: 'Social' },
-    { id: 'Outdoor', name: 'Outdoor' },
-    { id: 'Cultural', name: 'Cultural' },
-    { id: 'Sports', name: 'Sports' },
-    { id: 'Entertainment', name: 'Entertainment' }
-  ];
+  // Process hangouts data
+  const hangouts = showMyHangouts 
+    ? (hangoutsData || []) 
+    : (hangoutsData?.hangouts || []);
 
-  const statuses = [
-    { id: 'all', name: 'All Status' },
-    { id: 'upcoming', name: 'Upcoming' },
-    { id: 'ongoing', name: 'Ongoing' },
-    { id: 'completed', name: 'Completed' }
-  ];
-
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setHangouts(dummyHangouts);
-      setFilteredHangouts(dummyHangouts);
-      setLoading(false);
-    }, 1000);
-  }, []);
-
-  useEffect(() => {
-    let filtered = hangouts;
-
-    // Filter by search term
+  // Filter hangouts
+  const filteredHangouts = hangouts.filter(hangout => {
+    // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(hangout =>
-        hangout.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        hangout.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        hangout.place.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        hangout.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = 
+        hangout.title.toLowerCase().includes(searchLower) ||
+        hangout.description?.toLowerCase().includes(searchLower) ||
+        hangout.place?.name.toLowerCase().includes(searchLower) ||
+        hangout.creator?.name.toLowerCase().includes(searchLower) ||
+        hangout.tags?.some(tag => tag.toLowerCase().includes(searchLower));
+      
+      if (!matchesSearch) return false;
     }
 
-    // Filter by category
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(hangout => hangout.category === selectedCategory);
+    // Status filter
+    if (selectedStatus !== 'all' && hangout.status !== selectedStatus) {
+      return false;
     }
 
-    // Filter by status
-    if (selectedStatus !== 'all') {
-      filtered = filtered.filter(hangout => hangout.status === selectedStatus);
+    // Time filter
+    if (selectedTimeFilter !== 'all') {
+      const hangoutDate = new Date(hangout.dateTime);
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const nextWeek = new Date(today);
+      nextWeek.setDate(nextWeek.getDate() + 7);
+
+      switch (selectedTimeFilter) {
+        case 'today':
+          if (hangoutDate < today || hangoutDate >= tomorrow) return false;
+          break;
+        case 'tomorrow':
+          if (hangoutDate < tomorrow || hangoutDate >= new Date(tomorrow.getTime() + 24 * 60 * 60 * 1000)) return false;
+          break;
+        case 'this_week':
+          if (hangoutDate < today || hangoutDate >= nextWeek) return false;
+          break;
+        case 'upcoming':
+          if (hangoutDate < now) return false;
+          break;
+        default:
+          break;
+      }
     }
 
-    setFilteredHangouts(filtered);
-  }, [hangouts, searchTerm, selectedCategory, selectedStatus]);
+    return true;
+  });
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric' 
-    });
+  // Handle favorite toggle (placeholder - would need backend support)
+  const handleFavoriteToggle = (hangoutId) => {
+    toast.success('Favorite feature coming soon!');
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'upcoming': return 'bg-blue-100 text-blue-800';
-      case 'ongoing': return 'bg-green-100 text-green-800';
-      case 'completed': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getCategoryColor = (category) => {
-    switch (category) {
-      case 'Food & Dining': return 'bg-orange-100 text-orange-800';
-      case 'Social': return 'bg-purple-100 text-purple-800';
-      case 'Outdoor': return 'bg-green-100 text-green-800';
-      case 'Cultural': return 'bg-yellow-100 text-yellow-800';
-      case 'Sports': return 'bg-red-100 text-red-800';
-      case 'Entertainment': return 'bg-pink-100 text-pink-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  if (loading) {
+  // Loading state
+  if (hangoutsLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading hangouts...</p>
         </div>
       </div>
     );
   }
 
+  // Error state
+  if (hangoutsError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <UsersIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            Failed to Load Hangouts
+          </h3>
+          <p className="text-gray-600 mb-4">
+            There was an error loading hangouts. Please try again.
+          </p>
+          <button
+            onClick={() => refetchHangouts()}
+            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -268,21 +156,39 @@ const HangoutsPage = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Social Hangouts
+                {showMyHangouts ? 'My Hangouts' : 'Discover Hangouts'}
               </h1>
               <p className="text-gray-600">
-                Connect with people and discover amazing places together
+                {showMyHangouts 
+                  ? 'Manage your hangouts and see where you\'re going'
+                  : 'Connect with people and discover amazing places together'
+                }
               </p>
             </div>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/hangouts/create')}
-              className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Create Hangout
-            </motion.button>
+            <div className="flex items-center space-x-3 mt-4 sm:mt-0">
+              {/* My Hangouts Toggle */}
+              <button
+                onClick={() => setShowMyHangouts(!showMyHangouts)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  showMyHangouts
+                    ? 'bg-primary-100 text-primary-700 hover:bg-primary-200'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                }`}
+              >
+                {showMyHangouts ? 'All Hangouts' : 'My Hangouts'}
+              </button>
+
+              {/* Create Hangout Button */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/hangouts/create')}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 shadow-sm"
+              >
+                <PlusIcon className="h-4 w-4 mr-2" />
+                Create Hangout
+              </motion.button>
+            </div>
           </div>
         </motion.div>
 
@@ -293,231 +199,170 @@ const HangoutsPage = () => {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="mb-6"
         >
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:space-x-4">
-              {/* Search */}
-              <div className="flex-1 mb-4 lg:mb-0">
-                <div className="relative">
-                  <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search hangouts..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            {/* Search Bar */}
+            <div className="mb-4">
+              <div className="relative">
+                <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search hangouts by title, place, or organizer..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 mb-4 lg:mb-0">
+                {/* Status Filter */}
+                <div className="flex items-center space-x-2">
+                  <CalendarIcon className="h-4 w-4 text-gray-500" />
+                  <select
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="planned">Planned</option>
+                    <option value="ongoing">Ongoing</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+
+                {/* Time Filter */}
+                <div className="flex items-center space-x-2">
+                  <MapPinIcon className="h-4 w-4 text-gray-500" />
+                  <select
+                    value={selectedTimeFilter}
+                    onChange={(e) => setSelectedTimeFilter(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                  >
+                    <option value="all">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="tomorrow">Tomorrow</option>
+                    <option value="this_week">This Week</option>
+                    <option value="upcoming">Upcoming</option>
+                  </select>
                 </div>
               </div>
 
-              {/* Filters */}
-              <div className="flex flex-col sm:flex-row sm:space-x-4">
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="mb-2 sm:mb-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {categories.map(category => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {statuses.map(status => (
-                    <option key={status.id} value={status.id}>
-                      {status.name}
-                    </option>
-                  ))}
-                </select>
+              {/* Results Count */}
+              <div className="text-sm text-gray-600">
+                {filteredHangouts.length} hangout{filteredHangouts.length !== 1 ? 's' : ''} found
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* Results Count */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="mb-6"
-        >
-          <p className="text-gray-600">
-            Showing {filteredHangouts.length} hangout{filteredHangouts.length !== 1 ? 's' : ''}
-          </p>
-        </motion.div>
+        {/* Quick Stats (only for authenticated users) */}
+        {isAuthenticated && !showMyHangouts && hangouts.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="mb-8 bg-white rounded-xl shadow-sm p-6 border border-gray-100"
+          >
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Community Stats</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary-600">{hangouts.length}</div>
+                <div className="text-sm text-gray-600">Total Hangouts</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {hangouts.filter(h => h.status === 'planned').length}
+                </div>
+                <div className="text-sm text-gray-600">Upcoming</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">
+                  {hangouts.filter(h => h.status === 'ongoing').length}
+                </div>
+                <div className="text-sm text-gray-600">Happening Now</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-600">
+                  {hangouts.reduce((total, h) => total + (h.participants?.filter(p => p.status === 'accepted').length || 0) + 1, 0)}
+                </div>
+                <div className="text-sm text-gray-600">Total Participants</div>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Hangouts Grid */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          transition={{ duration: 0.6, delay: 0.4 }}
         >
-          <AnimatePresence>
-            {filteredHangouts.map((hangout, index) => (
-              <motion.div
-                key={hangout.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
-                whileHover={{ y: -4 }}
-                className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200"
-              >
-                {/* Image */}
-                <div className="relative h-48 bg-gray-200">
-                  <img
-                    src={hangout.image}
-                    alt={hangout.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-3 right-3">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(hangout.status)}`}>
-                      {hangout.status}
-                    </span>
-                  </div>
-                  {!hangout.isPublic && (
-                    <div className="absolute top-3 left-3">
-                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-                        Private
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Content */}
-                <div className="p-4">
-                  {/* Title and Category */}
-                  <div className="mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                      {hangout.title}
-                    </h3>
-                    <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(hangout.category)}`}>
-                      {hangout.category}
-                    </span>
-                  </div>
-
-                  {/* Description */}
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                    {hangout.description}
-                  </p>
-
-                  {/* Details */}
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center text-sm text-gray-500">
-                      <MapPinIcon className="h-4 w-4 mr-2" />
-                      <span>{hangout.place.name}</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-500">
-                      <CalendarIcon className="h-4 w-4 mr-2" />
-                      <span>{formatDate(hangout.date)}</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-500">
-                      <ClockIcon className="h-4 w-4 mr-2" />
-                      <span>{hangout.time} ({hangout.duration}h)</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-500">
-                      <UsersIcon className="h-4 w-4 mr-2" />
-                      <span>{hangout.currentParticipants}/{hangout.maxParticipants} participants</span>
-                    </div>
-                  </div>
-
-                  {/* Organizer */}
-                  <div className="flex items-center mb-4">
-                    <img
-                      src={hangout.organizer.avatar}
-                      alt={hangout.organizer.name}
-                      className="h-8 w-8 rounded-full mr-3"
+          {filteredHangouts.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <AnimatePresence>
+                {filteredHangouts.map((hangout, index) => (
+                  <motion.div
+                    key={hangout._id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.4, delay: index * 0.1 }}
+                  >
+                    <HangoutCard
+                      hangout={hangout}
+                      onFavorite={handleFavoriteToggle}
+                      isFavorited={false} // TODO: Implement favorite tracking
                     />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {hangout.organizer.name}
-                      </p>
-                      <p className="text-xs text-gray-500">Organizer</p>
-                    </div>
-                  </div>
-
-                  {/* Participants */}
-                  <div className="flex items-center mb-4">
-                    <div className="flex -space-x-2">
-                      {hangout.participants.slice(0, 3).map((participant, idx) => (
-                        <img
-                          key={idx}
-                          src={participant.avatar}
-                          alt={participant.name}
-                          className="h-6 w-6 rounded-full border-2 border-white"
-                        />
-                      ))}
-                      {hangout.participants.length > 3 && (
-                        <div className="h-6 w-6 rounded-full bg-gray-300 border-2 border-white flex items-center justify-center">
-                          <span className="text-xs text-gray-600">
-                            +{hangout.participants.length - 3}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <span className="ml-2 text-xs text-gray-500">
-                      {hangout.participants.length} joined
-                    </span>
-                  </div>
-
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-1 mb-4">
-                    {hangout.tags.slice(0, 3).map((tag, idx) => (
-                      <span
-                        key={idx}
-                        className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex space-x-2">
-                    <Link
-                      to={`/hangouts/${hangout.id}`}
-                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors text-center"
-                    >
-                      View Details
-                    </Link>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                    >
-                      <HeartIcon className="h-5 w-5" />
-                    </motion.button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          ) : (
+            /* Empty State */
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-16"
+            >
+              <div className="text-gray-400 mb-4">
+                <UsersIcon className="h-16 w-16 mx-auto" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {searchTerm || selectedStatus !== 'all' || selectedTimeFilter !== 'all'
+                  ? 'No hangouts found'
+                  : showMyHangouts 
+                    ? 'No hangouts yet' 
+                    : 'No public hangouts available'
+                }
+              </h3>
+              <p className="text-gray-600 mb-6">
+                {searchTerm || selectedStatus !== 'all' || selectedTimeFilter !== 'all'
+                  ? 'Try adjusting your search or filters to find more hangouts.'
+                  : showMyHangouts
+                    ? 'Create your first hangout to get started!'
+                    : 'Be the first to create a hangout in your area!'
+                }
+              </p>
+              
+              {(!searchTerm && selectedStatus === 'all' && selectedTimeFilter === 'all') && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/hangouts/create')}
+                  className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 shadow-sm"
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Create Hangout
+                </motion.button>
+              )}
+            </motion.div>
+          )}
         </motion.div>
 
-        {/* Empty State */}
-        {filteredHangouts.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-12"
-          >
-            <div className="text-gray-400 mb-4">
-              <UsersIcon className="h-16 w-16 mx-auto" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No hangouts found
-            </h3>
-            <p className="text-gray-600">
-              Try adjusting your search or filters to find more hangouts.
-            </p>
-          </motion.div>
-        )}
+
       </div>
     </div>
   );

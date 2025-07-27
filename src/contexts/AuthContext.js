@@ -5,6 +5,19 @@ import api from '../services/api';
 
 const AuthContext = createContext();
 
+// Helper function to normalize user favorites from backend
+const normalizeUserFavorites = (user) => {
+  if (user && user.favorites && Array.isArray(user.favorites)) {
+    return {
+      ...user,
+      favorites: user.favorites.map(fav => 
+        typeof fav === 'string' ? fav : fav._id
+      )
+    };
+  }
+  return user;
+};
+
 // Check for token in localStorage and set initial authenticated state
 const token = localStorage.getItem('token');
 const initialState = {
@@ -21,9 +34,10 @@ const authReducer = (state, action) => {
     case 'REGISTER_SUCCESS':
       localStorage.setItem('token', action.payload.token);
       api.defaults.headers.common['Authorization'] = `Bearer ${action.payload.token}`;
+      
       return {
         ...state,
-        user: action.payload.user,
+        user: normalizeUserFavorites(action.payload.user),
         token: action.payload.token,
         isAuthenticated: true,
         loading: false,
@@ -56,7 +70,7 @@ const authReducer = (state, action) => {
     case 'USER_LOADED':
       return {
         ...state,
-        user: action.payload,
+        user: normalizeUserFavorites(action.payload),
         isAuthenticated: true,
         loading: false,
         error: null
@@ -64,7 +78,7 @@ const authReducer = (state, action) => {
     case 'UPDATE_USER':
       return {
         ...state,
-        user: action.payload,
+        user: normalizeUserFavorites(action.payload),
         error: null
       };
     case 'SET_LOADING':
@@ -135,8 +149,17 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.post('/api/auth/register', userData);
       dispatch({ type: 'REGISTER_SUCCESS', payload: response.data });
-      toast.success('Registration successful! Welcome to Foy Lekke!');
-      navigate('/');
+      
+      const user = response.data.user;
+      const welcomeMessage = user.role === 'advertiser' 
+        ? 'Registration successful! Welcome to your Ad Dashboard!'
+        : 'Registration successful! Welcome to Foy Lekke!';
+      
+      toast.success(welcomeMessage);
+      
+      // Redirect based on user role
+      const targetPath = getRoleBasedRedirect(user.role);
+      navigate(targetPath);
     } catch (error) {
       const message = error.response?.data?.message || 'Registration failed';
       dispatch({ type: 'REGISTER_FAIL', payload: message });
@@ -144,14 +167,38 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Get role-based redirect path
+  const getRoleBasedRedirect = (userRole) => {
+    switch (userRole) {
+      case 'admin':
+        return '/admin';
+      case 'advertiser':
+        return '/advertiser';
+      case 'user':
+      default:
+        return '/';
+    }
+  };
+
   // Login user
-  const login = async (email, password) => {
+  const login = async (email, password, redirectPath = null) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
       const response = await api.post('/api/auth/login', { email, password });
       dispatch({ type: 'LOGIN_SUCCESS', payload: response.data });
-      toast.success('Welcome back!');
-      navigate('/');
+      
+      const user = response.data.user;
+      const welcomeMessage = user.role === 'admin' 
+        ? 'Welcome back, Admin!' 
+        : user.role === 'advertiser' 
+        ? 'Welcome back to your Ad Dashboard!'
+        : 'Welcome back!';
+      
+      toast.success(welcomeMessage);
+      
+      // Use custom redirect path or role-based default
+      const targetPath = redirectPath || getRoleBasedRedirect(user.role);
+      navigate(targetPath);
     } catch (error) {
       const message = error.response?.data?.message || 'Login failed';
       dispatch({ type: 'LOGIN_FAIL', payload: message });
@@ -228,9 +275,28 @@ export const AuthProvider = ({ children }) => {
   const toggleFavorite = async (placeId) => {
     try {
       const response = await api.post(`/api/auth/favorites/${placeId}`);
-      dispatch({ type: 'UPDATE_USER', payload: { ...state.user, favorites: response.data.favorites } });
-      toast.success(response.data.message);
+      
+      // Extract favorites - backend returns populated objects, we need IDs
+      let favoriteIds = [];
+      if (response.data.favorites) {
+        favoriteIds = response.data.favorites.map(fav => 
+          typeof fav === 'string' ? fav : fav._id
+        );
+      }
+      
+      // Update the user state with new favorites array
+      const updatedUser = {
+        ...state.user,
+        favorites: favoriteIds
+      };
+      
+      dispatch({ type: 'UPDATE_USER', payload: updatedUser });
+      
+      // Show appropriate message
+      const isFavorited = updatedUser.favorites.includes(placeId);
+      toast.success(isFavorited ? 'Added to favorites!' : 'Removed from favorites!');
     } catch (error) {
+      console.error('Toggle favorite error:', error);
       const message = error.response?.data?.message || 'Failed to update favorites';
       toast.error(message);
     }

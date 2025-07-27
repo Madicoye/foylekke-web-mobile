@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useQuery } from 'react-query';
+import { useQuery, useQueryClient } from 'react-query';
 import { 
   MapPin, 
   Phone, 
@@ -39,13 +39,20 @@ import AdManager from '../components/ads/AdManager';
 import PlaceCard from '../components/places/PlaceCard';
 import { getCuisineTypeConfig } from '../config/cuisineTypes';
 import { getPlaceTypeConfig } from '../config/placeTypes';
-import { getImageUrls } from '../utils/imageUtils';
+import { 
+  getImageUrls, 
+  hasValidImages, 
+  getDefaultImageConfig, 
+  createImageErrorHandler 
+} from '../utils/imageUtils';
 import { toast } from 'react-hot-toast';
+import ReviewsList from '../components/reviews/ReviewsList';
 
 const PlaceDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated, toggleFavorite } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
@@ -58,7 +65,15 @@ const PlaceDetailPage = () => {
     ['place', id],
     () => placesAPI.getPlace(id),
     {
-      enabled: !!id
+      enabled: !!id,
+      onSuccess: (data) => {
+        // Update votes when place data is loaded
+        setVotes({
+          upvotes: data.upvoteCount || 0,
+          downvotes: data.downvoteCount || 0,
+          userVote: data.userVote || null
+        });
+      }
     }
   );
 
@@ -75,22 +90,7 @@ const PlaceDetailPage = () => {
     }
   );
 
-  // Load votes when place is loaded
-  useEffect(() => {
-    if (place?._id) {
-      loadVotes();
-    }
-  }, [place?._id]);
 
-  const loadVotes = async () => {
-    try {
-      const votesData = await placesAPI.getPlaceVotes(place._id);
-      setVotes(votesData);
-    } catch (error) {
-      console.error('Error loading votes:', error);
-      setVotes({ upvotes: 0, downvotes: 0, userVote: null });
-    }
-  };
 
   const handleVote = async (voteType) => {
     if (!user) {
@@ -103,12 +103,34 @@ const PlaceDetailPage = () => {
     setIsVoting(true);
     try {
       if (votes.userVote === voteType) {
-        await placesAPI.removeVote(place._id);
-        await loadVotes();
+        await placesAPI.voteOnPlace(place._id, 'remove');
+        setVotes(prev => ({
+          ...prev,
+          [voteType === 'upvote' ? 'upvotes' : 'downvotes']: prev[voteType === 'upvote' ? 'upvotes' : 'downvotes'] - 1,
+          userVote: null
+        }));
         toast.success('Vote removed');
       } else {
         await placesAPI.voteOnPlace(place._id, voteType);
-        await loadVotes();
+        
+        // Update local state optimistically
+        setVotes(prev => {
+          const newVotes = { ...prev };
+          
+          // Remove previous vote if exists
+          if (prev.userVote) {
+            const prevVoteKey = prev.userVote === 'upvote' ? 'upvotes' : 'downvotes';
+            newVotes[prevVoteKey] = prev[prevVoteKey] - 1;
+          }
+          
+          // Add new vote
+          const newVoteKey = voteType === 'upvote' ? 'upvotes' : 'downvotes';
+          newVotes[newVoteKey] = prev[newVoteKey] + 1;
+          newVotes.userVote = voteType;
+          
+          return newVotes;
+        });
+        
         toast.success(`${voteType === 'upvote' ? 'Upvoted' : 'Downvoted'} successfully`);
       }
     } catch (error) {
@@ -119,12 +141,14 @@ const PlaceDetailPage = () => {
     }
   };
 
-  const handleFavoriteClick = () => {
+  const handleFavoriteClick = async () => {
     if (!isAuthenticated) {
       toast.error('Please log in to save favorites');
       return;
     }
-    toggleFavorite(id);
+    await toggleFavorite(id);
+    // Invalidate favorites query to refresh the profile page
+    queryClient.invalidateQueries(['favoritePlaces']);
   };
 
   const handleShare = async () => {
@@ -217,15 +241,9 @@ const PlaceDetailPage = () => {
     }));
   };
 
-  const getDefaultImage = (type) => {
-    const config = getPlaceTypeConfig(type);
-    return {
-      icon: config?.icon || '📍',
-      gradient: 'from-primary-100 to-accent-100'
-    };
-  };
-
   const imageUrls = getImageUrls(place);
+  const hasImages = hasValidImages(place);
+  const defaultImageConfig = getDefaultImageConfig(place?.type);
 
   if (isLoading) {
     return (
@@ -263,8 +281,6 @@ const PlaceDetailPage = () => {
   const typeConfig = getPlaceTypeConfig(place.type);
   const openingHours = formatOpeningHours(place.openingHours);
   const filteredRelatedPlaces = relatedPlaces?.places?.filter(p => p._id !== id) || [];
-  const defaultImg = getDefaultImage(place.type);
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Breadcrumb */}
@@ -286,7 +302,7 @@ const PlaceDetailPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Image Gallery */}
             <div className="space-y-4">
-              {imageUrls && imageUrls.length > 0 ? (
+              {hasImages && imageUrls.length > 0 ? (
                 <>
                   <div className="relative aspect-video rounded-xl overflow-hidden">
                     <img
@@ -294,17 +310,14 @@ const PlaceDetailPage = () => {
                       alt={place.name}
                       className="w-full h-full object-cover cursor-pointer"
                       onClick={() => setShowImageModal(true)}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
+                      onError={createImageErrorHandler(place.type)}
                     />
                     <div 
-                      className={`absolute inset-0 bg-gradient-to-br ${defaultImg.gradient} flex items-center justify-center cursor-pointer hidden`}
+                      className={`fallback-image absolute inset-0 bg-gradient-to-br ${defaultImageConfig.gradient} flex items-center justify-center cursor-pointer hidden`}
                       onClick={() => setShowImageModal(true)}
                     >
                       <div className="text-center">
-                        <div className="text-6xl">{defaultImg.icon}</div>
+                        <div className="text-6xl">{defaultImageConfig.icon}</div>
                       </div>
                     </div>
                     <button
@@ -329,15 +342,12 @@ const PlaceDetailPage = () => {
                             src={image}
                             alt={`${place.name} ${index + 1}`}
                             className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.nextSibling.style.display = 'flex';
-                            }}
+                            onError={createImageErrorHandler(place.type)}
                           />
                           <div 
-                            className={`w-full h-full bg-gradient-to-br ${defaultImg.gradient} flex items-center justify-center hidden`}
+                            className={`fallback-image w-full h-full bg-gradient-to-br ${defaultImageConfig.gradient} flex items-center justify-center hidden`}
                           >
-                            <span className="text-2xl">{defaultImg.icon}</span>
+                            <span className="text-2xl">{defaultImageConfig.icon}</span>
                           </div>
                         </button>
                       ))}
@@ -345,9 +355,9 @@ const PlaceDetailPage = () => {
                   )}
                 </>
               ) : (
-                <div className={`aspect-video bg-gradient-to-br ${defaultImg.gradient} rounded-xl flex items-center justify-center`}>
+                <div className={`aspect-video bg-gradient-to-br ${defaultImageConfig.gradient} rounded-xl flex items-center justify-center`}>
                   <div className="text-center">
-                    <div className="text-6xl">{defaultImg.icon}</div>
+                    <div className="text-6xl">{defaultImageConfig.icon}</div>
                   </div>
                 </div>
               )}
@@ -781,13 +791,13 @@ const PlaceDetailPage = () => {
 
             {activeTab === 'reviews' && (
               <div className="space-y-6">
-                <div className="text-center py-12">
-                  <Users size={48} className="text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Reviews Coming Soon</h3>
-                  <p className="text-gray-600">
-                    We're working on adding a review system. Check back soon!
-                  </p>
-                </div>
+                <ReviewsList
+                  placeId={id}
+                  placeName={place?.name}
+                  allowWriteReview={true}
+                  title="Customer Reviews"
+                  emptyMessage="No reviews yet for this place"
+                />
               </div>
             )}
           </div>

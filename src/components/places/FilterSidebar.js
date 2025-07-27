@@ -64,18 +64,24 @@ const FilterSidebar = ({ filters, onFilterChange, showFilters, onToggleFilters }
     onFilterChange({ [key]: value });
   };
 
-  const handleFeatureToggle = (feature) => {
+    const handleFeatureToggle = (feature) => {
     const currentFeatures = filters.features ? filters.features.split(',') : [];
     const isSelected = currentFeatures.includes(feature);
-    
+
     let newFeatures;
     if (isSelected) {
       newFeatures = currentFeatures.filter(f => f !== feature);
     } else {
       newFeatures = [...currentFeatures, feature];
     }
-    
+
+    // Update features filter
     onFilterChange({ features: newFeatures.join(',') });
+    
+    // Also handle hasMenu specially
+    if (feature === 'hasMenu') {
+      onFilterChange({ hasMenu: !isSelected });
+    }
   };
 
   const clearFilter = (key) => {
@@ -88,12 +94,14 @@ const FilterSidebar = ({ filters, onFilterChange, showFilters, onToggleFilters }
       type: '',
       cuisine: '',
       region: '',
-      minRating: '',
-      priceLevel: '',
+      rating: '',
+      priceRange: '',
       features: '',
-      nearbyRadius: '',
-      sortBy: 'rating',
-      sortOrder: 'desc'
+      hasMenu: '',
+      lat: '',
+      lng: '',
+      radius: '',
+      sort: 'rating'
     });
   };
 
@@ -219,8 +227,8 @@ const FilterSidebar = ({ filters, onFilterChange, showFilters, onToggleFilters }
                     Search Radius (km)
                   </label>
                   <select
-                    value={filters.nearbyRadius || ''}
-                    onChange={(e) => handleFilterChange('nearbyRadius', e.target.value)}
+                    value={filters.radius || filters.nearbyRadius || ''}
+                    onChange={(e) => handleFilterChange('radius', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   >
                     <option value="">Any distance</option>
@@ -237,9 +245,9 @@ const FilterSidebar = ({ filters, onFilterChange, showFilters, onToggleFilters }
                       navigator.geolocation.getCurrentPosition(
                         (position) => {
                           onFilterChange({
-                            latitude: position.coords.latitude,
-                            longitude: position.coords.longitude,
-                            nearbyRadius: filters.nearbyRadius || '10'
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude,
+                            radius: filters.radius || filters.nearbyRadius || '10'
                           });
                         },
                         (error) => {
@@ -341,7 +349,7 @@ const FilterSidebar = ({ filters, onFilterChange, showFilters, onToggleFilters }
             <FilterSection title="Price Range" sectionKey="price">
               <div className="space-y-3">
                 {priceRanges.map((priceRange) => {
-                  const isSelected = filters.priceLevel === priceRange.value;
+                  const isSelected = filters.priceRange === priceRange.value;
                   
                   return (
                     <label
@@ -350,10 +358,10 @@ const FilterSidebar = ({ filters, onFilterChange, showFilters, onToggleFilters }
                     >
                       <input
                         type="radio"
-                        name="priceLevel"
+                        name="priceRange"
                         value={priceRange.value}
                         checked={isSelected}
-                        onChange={(e) => handleFilterChange('priceLevel', e.target.value)}
+                        onChange={(e) => handleFilterChange('priceRange', e.target.value)}
                         className="mt-1 text-primary-600 focus:ring-primary-500 focus:ring-offset-0"
                       />
                       <div>
@@ -367,9 +375,9 @@ const FilterSidebar = ({ filters, onFilterChange, showFilters, onToggleFilters }
                     </label>
                   );
                 })}
-                {filters.priceLevel && (
+                {filters.priceRange && (
                   <button
-                    onClick={() => clearFilter('priceLevel')}
+                    onClick={() => clearFilter('priceRange')}
                     className="text-sm text-gray-500 hover:text-gray-700 ml-8"
                   >
                     Clear selection
@@ -382,7 +390,7 @@ const FilterSidebar = ({ filters, onFilterChange, showFilters, onToggleFilters }
             <FilterSection title="Minimum Rating" sectionKey="rating">
               <div className="space-y-3">
                 {[4, 3, 2, 1].map((rating) => {
-                  const isSelected = parseInt(filters.minRating) === rating;
+                  const isSelected = parseInt(filters.rating) === rating;
                   
                   return (
                     <label
@@ -391,10 +399,10 @@ const FilterSidebar = ({ filters, onFilterChange, showFilters, onToggleFilters }
                     >
                       <input
                         type="radio"
-                        name="minRating"
+                        name="rating"
                         value={rating}
                         checked={isSelected}
-                        onChange={(e) => handleFilterChange('minRating', e.target.value)}
+                        onChange={(e) => handleFilterChange('rating', e.target.value)}
                         className="text-primary-600 focus:ring-primary-500 focus:ring-offset-0"
                       />
                       <div className="flex items-center space-x-1">
@@ -414,9 +422,9 @@ const FilterSidebar = ({ filters, onFilterChange, showFilters, onToggleFilters }
                     </label>
                   );
                 })}
-                {filters.minRating && (
+                {filters.rating && (
                   <button
-                    onClick={() => clearFilter('minRating')}
+                    onClick={() => clearFilter('rating')}
                     className="text-sm text-gray-500 hover:text-gray-700 ml-8"
                   >
                     Clear selection

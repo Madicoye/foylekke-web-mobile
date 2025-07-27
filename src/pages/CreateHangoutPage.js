@@ -176,19 +176,38 @@ const CreateHangoutPage = () => {
 
     setIsSubmitting(true);
     try {
+      // Prepare hangout data according to backend specification
+      const selectedPlace = formData.places[0]; // Use first place
+      const dateTime = new Date(`${formData.date}T${formData.time}`).toISOString();
+      
       const hangoutData = {
-        ...formData,
-        organizerId: user._id,
-        participants: [user._id],
-        status: 'upcoming'
+        title: formData.title,
+        description: formData.description,
+        dateTime: dateTime,
+        maxParticipants: formData.maxParticipants,
+        isPrivate: !formData.isPublic,
+        tags: formData.tags,
+        specialRequests: '', // Add if needed
       };
 
-      const response = await hangoutsAPI.createHangout(hangoutData);
-      
-      // Send invitations if any
-      if (formData.invitations.length > 0) {
-        await hangoutsAPI.sendInvitations(response._id, formData.invitations);
+      // Add place or manual address
+      if (selectedPlace.isManual) {
+        hangoutData.manualAddress = {
+          street: selectedPlace.address.street || selectedPlace.address,
+          city: 'Dakar', // Default or from form
+          region: 'Dakar', // Default or from form  
+          country: 'Senegal'
+        };
+      } else {
+        hangoutData.placeId = selectedPlace._id;
       }
+
+      // Add user IDs for invitations if any
+      if (formData.invitations.length > 0) {
+        hangoutData.inviteUserIds = formData.invitations.map(inv => inv.userId || inv.id);
+      }
+
+      const response = await hangoutsAPI.createHangout(hangoutData);
 
       toast.success('Hangout created successfully!');
       navigate(`/hangouts/${response._id}`);

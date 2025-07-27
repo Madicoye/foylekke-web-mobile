@@ -97,63 +97,47 @@ export const authAPI = {
 
 // Places API
 export const placesAPI = {
-  // Get all places with filters
+  // Get all places with advanced filtering
   getPlaces: (params = {}) => 
     api.get('/api/places', { params }).then(response => response.data),
   
-  // Get place types
-  getPlaceTypes: () => 
-    api.get('/api/places/types').then(response => response.data),
-  
-  // Get single place
+  // Get single place by ID
   getPlace: (id) => 
     api.get(`/api/places/${id}`).then(response => response.data),
   
-  // Create new place
-  createPlace: (data) => 
-    api.post('/api/places', data).then(response => response.data),
+  // Get places by type
+  getPlacesByType: (type, params = {}) => 
+    api.get('/api/places', { params: { type, ...params } }).then(response => response.data),
   
-  // Update place
-  updatePlace: (id, data) => 
-    api.put(`/api/places/${id}`, data).then(response => response.data),
+  // Get places by region
+  getPlacesByRegion: (region, params = {}) => 
+    api.get('/api/places', { params: { region, ...params } }).then(response => response.data),
   
-  // Delete place
-  deletePlace: (id) => 
-    api.delete(`/api/places/${id}`).then(response => response.data),
+  // Get featured places
+  getFeaturedPlaces: (params = {}) => 
+    api.get('/api/places', { params: { featured: true, ...params } }).then(response => response.data),
   
-  // Get top places by region
-  getTopPlaces: (region, type) => 
-    api.get(`/api/places/top/${region}`, { params: { type } }).then(response => response.data),
-  
-  // Search suggestions
-  searchSuggestions: (query) => 
+  // Search places with suggestions
+  getSearchSuggestions: (query) => 
     api.get('/api/places/search-suggestions', { params: { q: query } }).then(response => response.data),
   
-  // Advanced search
+  // Advanced search (deprecated - use getPlaces with params instead)
   advancedSearch: (searchData) => 
-    api.post('/api/places/advanced-search', searchData).then(response => response.data),
+    api.get('/api/places', { params: searchData }).then(response => response.data),
 
-  // Get places by location (nearby)
+  // Get nearby places using location-based search
   getNearbyPlaces: (lat, lng, radius, filters = {}) => 
-    api.get('/api/places/nearby', { 
+    api.get('/api/places', { 
       params: { lat, lng, radius, ...filters } 
     }).then(response => response.data),
 
   // Get places with available menu
   getPlacesWithMenu: (params = {}) => 
-    api.get('/api/places/with-menu', { params }).then(response => response.data),
+    api.get('/api/places', { params: { hasMenu: true, ...params } }).then(response => response.data),
 
-  // Vote on place (upvote/downvote)
+  // Vote on place (upvote/downvote/remove)
   voteOnPlace: (placeId, voteType) => 
     api.post(`/api/places/${placeId}/vote`, { voteType }).then(response => response.data),
-
-  // Get place votes
-  getPlaceVotes: (placeId) => 
-    api.get(`/api/places/${placeId}/votes`).then(response => response.data),
-
-  // Remove vote from place
-  removeVote: (placeId) => 
-    api.delete(`/api/places/${placeId}/vote`).then(response => response.data),
 };
 
 // Reviews API
@@ -198,6 +182,10 @@ export const reviewsAPI = {
   toggleReaction: (id, reactionType) => 
     api.post(`/api/reviews/${id}/reaction`, { reactionType }).then(response => response.data),
   
+  // Like review (new endpoint)
+  likeReview: (reviewId) => 
+    api.post(`/api/reviews/${reviewId}/like`).then(response => response.data),
+  
   // Flag review
   flagReview: (id, reason) => 
     api.post(`/api/reviews/${id}/flag`, { reason }).then(response => response.data),
@@ -207,12 +195,27 @@ export const reviewsAPI = {
     api.post(`/api/reviews/${id}/respond`, { content }).then(response => response.data),
 };
 
+// Users API
+export const usersAPI = {
+  // Search users by email, phone, or name
+  searchUsers: (query) => 
+    api.get(`/api/users/search?q=${encodeURIComponent(query)}`).then(response => response.data),
+  
+  // Get user profile by ID
+  getUserProfile: (userId) => 
+    api.get(`/api/users/${userId}`).then(response => response.data),
+  
+  // Get user's public info (for hangout invitations)
+  getUsersPublicInfo: (userIds) => 
+    api.post('/api/users/public-info', { userIds }).then(response => response.data),
+};
+
 // Hangouts API
 export const hangoutsAPI = {
-  // Get all hangouts
+  // Get all hangouts (public hangouts)
   getHangouts: (params = {}) => api.get('/api/hangouts', { params }).then(response => response.data),
   
-  // Get user's hangouts
+  // Get user's hangouts (created or participating)
   getMyHangouts: () => api.get('/api/hangouts/my-hangouts').then(response => response.data),
   
   // Get single hangout
@@ -227,61 +230,41 @@ export const hangoutsAPI = {
   // Delete hangout
   deleteHangout: (id) => api.delete(`/api/hangouts/${id}`).then(response => response.data),
   
-  // Join hangout
+  // Join hangout (direct join for public hangouts)
   joinHangout: (id) => api.post(`/api/hangouts/${id}/join`).then(response => response.data),
   
   // Leave hangout
   leaveHangout: (id) => api.post(`/api/hangouts/${id}/leave`).then(response => response.data),
   
   // Request to join public hangout
-  requestToJoin: (id, message) => api.post(`/api/hangouts/${id}/request`, { message }).then(response => response.data),
+  requestToJoin: (id, message) => api.post(`/api/hangouts/${id}/request-join`, { message }).then(response => response.data),
 
-  // Approve join request
-  approveJoinRequest: (hangoutId, requestId) => 
-    api.post(`/api/hangouts/${hangoutId}/approve/${requestId}`).then(response => response.data),
-
-  // Reject join request
-  rejectJoinRequest: (hangoutId, requestId) => 
-    api.post(`/api/hangouts/${hangoutId}/reject/${requestId}`).then(response => response.data),
+  // Approve/reject join request
+  respondToJoinRequest: (hangoutId, requestId, response) => 
+    api.post(`/api/hangouts/${hangoutId}/respond-join-request/${requestId}`, { response }).then(response => response.data),
 
   // Send invitations
-  sendInvitations: (hangoutId, invitations) => 
-    api.post(`/api/hangouts/${hangoutId}/invite`, { invitations }).then(response => response.data),
+  sendInvitations: (hangoutId, userIds) => 
+    api.post(`/api/hangouts/${hangoutId}/invite`, { userIds }).then(response => response.data),
 
   // Respond to invitation
-  respondToInvitation: (invitationId, response, message) => 
-    api.post(`/api/hangouts/invitations/${invitationId}/respond`, { response, message }).then(response => response.data),
+  respondToInvitation: (hangoutId, response) => 
+    api.post(`/api/hangouts/${hangoutId}/respond-invitation`, { response }).then(response => response.data),
 
-  // Get hangout invitations
-  getMyInvitations: (status) => 
-    api.get('/api/hangouts/invitations', { params: { status } }).then(response => response.data),
+  // Get user's invitations
+  getMyInvitations: () => 
+    api.get('/api/hangouts/my-invitations').then(response => response.data),
 
   // Get hangout statistics
   getHangoutStats: (id) => 
     api.get(`/api/hangouts/${id}/stats`).then(response => response.data),
 
-  // Get public hangouts
-  getPublicHangouts: (params = {}) => 
-    api.get('/api/hangouts/public', { params }).then(response => response.data),
-
-  // Get join requests for a hangout (organizer only)
+  // Get join requests for a hangout (organizer only) - deprecated, use getHangoutStats instead
   getJoinRequests: (hangoutId) => 
-    api.get(`/api/hangouts/${hangoutId}/requests`).then(response => response.data),
+    api.get(`/api/hangouts/${hangoutId}/stats`).then(response => response.data.pendingJoinRequests),
   
   // Add message to hangout
   addMessage: (id, content) => api.post(`/api/hangouts/${id}/messages`, { content }).then(response => response.data),
-
-  // Add place to hangout
-  addPlaceToHangout: (hangoutId, placeId, isManual, manualAddress) => 
-    api.post(`/api/hangouts/${hangoutId}/places`, { 
-      placeId, 
-      isManual, 
-      manualAddress 
-    }).then(response => response.data),
-
-  // Remove place from hangout
-  removePlaceFromHangout: (hangoutId, placeId) => 
-    api.delete(`/api/hangouts/${hangoutId}/places/${placeId}`).then(response => response.data),
 };
 
 // Advertisements API
@@ -400,6 +383,93 @@ export const paymentAPI = {
   // Get payment statistics
   getPaymentStatistics: () => 
     api.get('/api/payments/statistics').then(response => response.data)
+};
+
+// Notifications API
+export const notificationsAPI = {
+  // Get all notifications for the current user
+  getNotifications: (params = {}) => 
+    api.get('/api/notifications', { params }).then(response => response.data),
+  
+  // Get unread notifications count
+  getUnreadCount: () => 
+    api.get('/api/notifications/unread-count').then(response => response.data),
+  
+  // Mark specific notification as read
+  markAsRead: (notificationId) => 
+    api.patch(`/api/notifications/${notificationId}/read`).then(response => response.data),
+  
+  // Mark all notifications as read
+  markAllAsRead: () => 
+    api.patch('/api/notifications/mark-all-read').then(response => response.data),
+  
+  // Delete a specific notification
+  deleteNotification: (notificationId) => 
+    api.delete(`/api/notifications/${notificationId}`).then(response => response.data),
+  
+  // Get notification types
+  getNotificationTypes: () => 
+    api.get('/api/notifications/types').then(response => response.data),
+  
+  // Get user's notification preferences
+  getNotificationPreferences: () => 
+    api.get('/api/notifications/preferences').then(response => response.data),
+  
+  // Update user's notification preferences
+  updateNotificationPreferences: (preferences) => 
+    api.put('/api/notifications/preferences', preferences).then(response => response.data),
+  
+  // Send test notification (for development/testing)
+  sendTestNotification: (testData) => 
+    api.post('/api/notifications/test', testData).then(response => response.data),
+  
+  // Create system announcement (admin only)
+  createSystemAnnouncement: (announcement) => 
+    api.post('/api/notifications/system-announcement', announcement).then(response => response.data),
+};
+
+// Restaurant Admin API
+export const restaurantAdminAPI = {
+  // Dashboard
+  getDashboard: (restaurantId) => 
+    api.get(`/api/restaurants/${restaurantId}/dashboard`).then(response => response.data),
+  
+  // Analytics
+  getAnalytics: (restaurantId, params = {}) => 
+    api.get(`/api/restaurants/${restaurantId}/analytics`, { params }).then(response => response.data),
+  
+  // Menu Management
+  getMenu: (restaurantId) => 
+    api.get(`/api/restaurants/${restaurantId}/menu`).then(response => response.data),
+  
+  addCategory: (restaurantId, categoryData) => 
+    api.post(`/api/restaurants/${restaurantId}/menu/categories`, categoryData).then(response => response.data),
+  
+  deleteCategory: (restaurantId, categoryName) => 
+    api.delete(`/api/restaurants/${restaurantId}/menu/categories/${encodeURIComponent(categoryName)}`).then(response => response.data),
+  
+  addMenuItem: (restaurantId, itemData) => 
+    api.post(`/api/restaurants/${restaurantId}/menu/items`, itemData).then(response => response.data),
+  
+  updateMenuItem: (restaurantId, itemId, itemData) => 
+    api.put(`/api/restaurants/${restaurantId}/menu/items/${itemId}`, itemData).then(response => response.data),
+  
+  deleteMenuItem: (restaurantId, itemId) => 
+    api.delete(`/api/restaurants/${restaurantId}/menu/items/${itemId}`).then(response => response.data),
+  
+  toggleMenu: (restaurantId) => 
+    api.post(`/api/restaurants/${restaurantId}/menu/toggle`).then(response => response.data),
+  
+  // Hangouts Management  
+  getHangouts: (restaurantId, params = {}) => 
+    api.get(`/api/restaurants/${restaurantId}/hangouts`, { params }).then(response => response.data),
+  
+  // Subscription Management
+  getSubscription: (restaurantId) => 
+    api.get(`/api/restaurants/${restaurantId}/subscription`).then(response => response.data),
+  
+  updateSubscription: (restaurantId, subscriptionData) => 
+    api.put(`/api/restaurants/${restaurantId}/subscription`, subscriptionData).then(response => response.data),
 };
 
 // Legacy Restaurant API (for backward compatibility)
