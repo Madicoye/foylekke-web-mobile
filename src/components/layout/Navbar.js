@@ -11,7 +11,8 @@ import {
   Users,
   Plus,
   Home,
-  Settings
+  Settings,
+  Star
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import SearchModal from '../search/SearchModal';
@@ -31,6 +32,7 @@ const Navbar = () => {
       { name: 'Home', path: '/', icon: Home },
       { name: 'Places', path: '/places', icon: MapPin },
       { name: 'Hangouts', path: '/hangouts', icon: Users },
+      { name: 'Reviews', path: '/reviews', icon: Star },
     ];
 
     if (!isAuthenticated) return baseItems;

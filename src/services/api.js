@@ -105,6 +105,14 @@ export const placesAPI = {
   getPlace: (id) => 
     api.get(`/api/places/${id}`).then(response => response.data),
   
+  // Get place types
+  getPlaceTypes: () => 
+    api.get('/api/places/types').then(response => response.data),
+  
+  // Get top places by region
+  getTopPlacesByRegion: (region) => 
+    api.get(`/api/places/top/${region}`).then(response => response.data),
+  
   // Get places by type
   getPlacesByType: (type, params = {}) => 
     api.get('/api/places', { params: { type, ...params } }).then(response => response.data),
@@ -138,6 +146,26 @@ export const placesAPI = {
   // Vote on place (upvote/downvote/remove)
   voteOnPlace: (placeId, voteType) => 
     api.post(`/api/places/${placeId}/vote`, { voteType }).then(response => response.data),
+  
+  // Get vote details for place
+  getPlaceVotes: (placeId) => 
+    api.get(`/api/places/${placeId}/votes`).then(response => response.data),
+  
+  // Create new place (admin/business)
+  createPlace: (placeData) => 
+    api.post('/api/places', placeData).then(response => response.data),
+  
+  // Update place (admin/business)
+  updatePlace: (placeId, placeData) => 
+    api.put(`/api/places/${placeId}`, placeData).then(response => response.data),
+  
+  // Delete place (admin)
+  deletePlace: (placeId) => 
+    api.delete(`/api/places/${placeId}`).then(response => response.data),
+  
+  // Sync places from Google (admin)
+  syncPlacesFromGoogle: (region) => 
+    api.post(`/api/places/sync/${region}`).then(response => response.data),
 };
 
 // Reviews API
@@ -265,6 +293,10 @@ export const hangoutsAPI = {
   
   // Add message to hangout
   addMessage: (id, content) => api.post(`/api/hangouts/${id}/messages`, { content }).then(response => response.data),
+  
+  // Get hangout suggestions for user
+  getHangoutSuggestions: () => 
+    api.get('/api/hangouts/suggestions/for-me').then(response => response.data),
 };
 
 // Advertisements API
@@ -350,39 +382,29 @@ export const adsAPI = {
 
 // Payment API
 export const paymentAPI = {
-  // Get available payment providers
-  getProviders: () => 
-    api.get('/api/payments/providers').then(response => response.data),
+  // Create payment record for ads
+  createPaymentRecord: (data) => 
+    api.post('/api/payments/create-payment-record', data).then(response => response.data),
   
-  // Create Orange Money payment
-  createOrangeMoneyPayment: (data) => 
-    api.post('/api/payments/orange-money/create', data).then(response => response.data),
+  // Get payment instructions by amount
+  getPaymentInstructions: (amount) => 
+    api.get(`/api/payments/payment-instructions/${amount}`).then(response => response.data),
   
-  // Create Wave payment
-  createWavePayment: (data) => 
-    api.post('/api/payments/wave/create', data).then(response => response.data),
+  // Confirm payment (admin)
+  confirmPayment: (paymentId, data) => 
+    api.post('/api/payments/confirm-payment', { paymentId, ...data }).then(response => response.data),
   
-  // Verify payment status
-  verifyPayment: (paymentId, provider) => 
-    api.post('/api/payments/verify', { paymentId, provider }).then(response => response.data),
-  
-  // Get payment instructions
-  getPaymentInstructions: (provider, amount, phoneNumber, reference) => 
-    api.get(`/api/payments/instructions/${provider}`, {
-      params: { amount, phoneNumber, reference }
-    }).then(response => response.data),
-  
-  // Validate phone number
-  validatePhone: (data) => 
-    api.post('/api/payments/validate-phone', data).then(response => response.data),
+  // Mark payment as failed (admin)
+  markPaymentFailed: (paymentId, reason) => 
+    api.post('/api/payments/mark-payment-failed', { paymentId, reason }).then(response => response.data),
   
   // Get payment history
   getPaymentHistory: (params = {}) => 
     api.get('/api/payments/history', { params }).then(response => response.data),
   
-  // Get payment statistics
-  getPaymentStatistics: () => 
-    api.get('/api/payments/statistics').then(response => response.data)
+  // Get payment analytics (admin)
+  getPaymentAnalytics: (params = {}) => 
+    api.get('/api/payments/admin/analytics', { params }).then(response => response.data),
 };
 
 // Notifications API
@@ -468,6 +490,9 @@ export const restaurantAdminAPI = {
   getSubscription: (restaurantId) => 
     api.get(`/api/restaurants/${restaurantId}/subscription`).then(response => response.data),
   
+  createSubscription: (restaurantId, subscriptionData) => 
+    api.post(`/api/restaurants/${restaurantId}/subscription`, subscriptionData).then(response => response.data),
+  
   updateSubscription: (restaurantId, subscriptionData) => 
     api.put(`/api/restaurants/${restaurantId}/subscription`, subscriptionData).then(response => response.data),
 };
@@ -479,6 +504,13 @@ export const restaurantsAPI = {
   createRestaurant: (data) => api.post('/api/restaurants', data).then(response => response.data),
   updateRestaurant: (id, data) => api.put(`/api/restaurants/${id}`, data).then(response => response.data),
   deleteRestaurant: (id) => api.delete(`/api/restaurants/${id}`).then(response => response.data),
+};
+
+// Health Check API
+export const healthAPI = {
+  // Check server health status
+  getHealthStatus: () => 
+    api.get('/health').then(response => response.data),
 };
 
 export default api;

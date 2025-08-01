@@ -15,6 +15,8 @@ import CreateHangoutPage from './pages/CreateHangoutPage';
 import ConfigPage from './pages/ConfigPage';
 import AdvertiserDashboard from './pages/AdvertiserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import RestaurantDashboard from './pages/RestaurantDashboard';
+import ReviewsPage from './pages/ReviewsPage';
 import { AuthProvider } from './contexts/AuthContext';
 
 function App() {
@@ -164,6 +166,32 @@ function App() {
                   transition={{ duration: 0.3 }}
                 >
                   <AdvertiserDashboard />
+                </motion.div>
+              } 
+            />
+            <Route 
+              path="/restaurant" 
+              element={
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <RestaurantDashboard />
+                </motion.div>
+              } 
+            />
+            <Route 
+              path="/reviews" 
+              element={
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <ReviewsPage />
                 </motion.div>
               } 
             />

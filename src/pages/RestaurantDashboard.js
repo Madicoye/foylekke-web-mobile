@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { 
@@ -30,20 +30,33 @@ const RestaurantDashboard = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  // Get user's restaurant ID (assuming it's in user profile)
-  const restaurantId = user?.restaurantId || user?.restaurant?._id;
+  // Get user's owned places
+  const ownedPlaces = user?.ownedPlaces || [];
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState(
+    ownedPlaces.length > 0 ? ownedPlaces[0]._id : null
+  );
 
-  // Fetch dashboard data
+  // Update selected restaurant when ownedPlaces changes
+  useEffect(() => {
+    if (ownedPlaces.length > 0 && !selectedRestaurantId) {
+      setSelectedRestaurantId(ownedPlaces[0]._id);
+    }
+  }, [ownedPlaces, selectedRestaurantId]);
+
+  // Get current restaurant details
+  const currentRestaurant = ownedPlaces.find(place => place._id === selectedRestaurantId);
+
+  // Fetch dashboard data for selected restaurant
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery(
-    ['restaurant-dashboard', restaurantId],
-    () => restaurantAdminAPI.getDashboard(restaurantId),
+    ['restaurant-dashboard', selectedRestaurantId],
+    () => restaurantAdminAPI.getDashboard(selectedRestaurantId),
     { 
-      enabled: !!restaurantId && activeTab === 'dashboard',
+      enabled: !!selectedRestaurantId && activeTab === 'dashboard',
       refetchInterval: 30000 // Refresh every 30 seconds
     }
   );
 
-  if (!restaurantId) {
+  if (ownedPlaces.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -52,10 +65,10 @@ const RestaurantDashboard = () => {
               <Settings size={48} className="mx-auto" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Restaurant Not Found
+              No Restaurants Found
             </h3>
             <p className="text-gray-600 mb-4">
-              Your account is not associated with a restaurant. Please contact support to set up your restaurant profile.
+              Your account is not associated with any restaurants. Please contact support to set up your restaurant profile.
             </p>
             <button
               onClick={() => window.location.href = 'mailto:support@foylekke.com'}
@@ -309,9 +322,33 @@ const RestaurantDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Restaurant Dashboard</h1>
+              {currentRestaurant && (
+                <p className="text-lg font-medium text-primary-600 mt-1">
+                  {currentRestaurant.name}
+                </p>
+              )}
               <p className="text-gray-600 mt-1">
-                Welcome back, {user?.name}! Manage your restaurant from here.
+                Welcome back, {user?.name}! Manage your restaurant{ownedPlaces.length > 1 ? 's' : ''} from here.
               </p>
+              {/* Restaurant Selector */}
+              {ownedPlaces.length > 1 && (
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Select Restaurant:
+                  </label>
+                  <select
+                    value={selectedRestaurantId || ''}
+                    onChange={(e) => setSelectedRestaurantId(e.target.value)}
+                    className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+                  >
+                    {ownedPlaces.map((place) => (
+                      <option key={place._id} value={place._id}>
+                        {place.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
             <div className="flex items-center space-x-4">
               <Bell className="h-6 w-6 text-gray-400" />
@@ -356,10 +393,10 @@ const RestaurantDashboard = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'dashboard' && <DashboardOverview />}
-        {activeTab === 'menu' && <MenuManagement restaurantId={restaurantId} />}
-        {activeTab === 'analytics' && <RestaurantAnalytics restaurantId={restaurantId} />}
-        {activeTab === 'hangouts' && <HangoutsManagement restaurantId={restaurantId} />}
-        {activeTab === 'subscription' && <SubscriptionManagement restaurantId={restaurantId} />}
+        {activeTab === 'menu' && <MenuManagement restaurantId={selectedRestaurantId} />}
+        {activeTab === 'analytics' && <RestaurantAnalytics restaurantId={selectedRestaurantId} />}
+        {activeTab === 'hangouts' && <HangoutsManagement restaurantId={selectedRestaurantId} />}
+        {activeTab === 'subscription' && <SubscriptionManagement restaurantId={selectedRestaurantId} />}
       </div>
     </div>
   );
