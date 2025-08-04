@@ -15,8 +15,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { hangoutsAPI } from '../services/api';
 import { toast } from 'react-hot-toast';
 import HangoutCard from '../components/hangouts/HangoutCard';
+import useTranslation from '../hooks/useTranslation';
 
 const HangoutsPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   
@@ -42,7 +44,7 @@ const HangoutsPage = () => {
       cacheTime: 5 * 60 * 1000, // 5 minutes
       onError: (error) => {
         console.error('Failed to fetch hangouts:', error);
-        toast.error('Failed to load hangouts');
+        toast.error(t('hangouts.failedToLoadToast'));
       }
     }
   );
@@ -105,7 +107,7 @@ const HangoutsPage = () => {
 
   // Handle favorite toggle (placeholder - would need backend support)
   const handleFavoriteToggle = (hangoutId) => {
-    toast.success('Favorite feature coming soon!');
+    toast.success(t('hangouts.favoriteFeatureSoon'));
   };
 
   // Loading state
@@ -114,7 +116,7 @@ const HangoutsPage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading hangouts...</p>
+          <p className="mt-4 text-gray-600">{t('hangouts.loadingHangouts')}</p>
         </div>
       </div>
     );
@@ -127,16 +129,16 @@ const HangoutsPage = () => {
         <div className="text-center">
           <UsersIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Failed to Load Hangouts
+            {t('hangouts.failedToLoadHangouts')}
           </h3>
           <p className="text-gray-600 mb-4">
-            There was an error loading hangouts. Please try again.
+            {t('hangouts.failedToLoadError')}
           </p>
           <button
             onClick={() => refetchHangouts()}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
           >
-            Try Again
+            {t('hangouts.tryAgain')}
           </button>
         </div>
       </div>
@@ -156,12 +158,12 @@ const HangoutsPage = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                {showMyHangouts ? 'My Hangouts' : 'Discover Hangouts'}
+                {showMyHangouts ? t('hangouts.myHangouts') : t('hangouts.title')}
               </h1>
               <p className="text-gray-600">
                 {showMyHangouts 
-                  ? 'Manage your hangouts and see where you\'re going'
-                  : 'Connect with people and discover amazing places together'
+                  ? t('hangouts.myHangoutsDescription')
+                  : t('hangouts.discoverDescription')
                 }
               </p>
             </div>
@@ -175,7 +177,7 @@ const HangoutsPage = () => {
                     : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
                 }`}
               >
-                {showMyHangouts ? 'All Hangouts' : 'My Hangouts'}
+                {showMyHangouts ? t('hangouts.allHangouts') : t('hangouts.myHangouts')}
               </button>
 
               {/* Create Hangout Button */}
@@ -186,7 +188,7 @@ const HangoutsPage = () => {
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 shadow-sm"
               >
                 <PlusIcon className="h-4 w-4 mr-2" />
-                Create Hangout
+                {t('hangouts.createHangout')}
               </motion.button>
             </div>
           </div>
@@ -206,7 +208,7 @@ const HangoutsPage = () => {
                 <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search hangouts by title, place, or organizer..."
+                  placeholder={t('hangouts.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
@@ -225,11 +227,11 @@ const HangoutsPage = () => {
                     onChange={(e) => setSelectedStatus(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
                   >
-                    <option value="all">All Status</option>
-                    <option value="planned">Planned</option>
-                    <option value="ongoing">Ongoing</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
+                    <option value="all">{t('hangouts.allStatus')}</option>
+                    <option value="planned">{t('hangouts.planned')}</option>
+                    <option value="ongoing">{t('hangouts.ongoing')}</option>
+                    <option value="completed">{t('hangouts.completed')}</option>
+                    <option value="cancelled">{t('hangouts.cancelled')}</option>
                   </select>
                 </div>
 
@@ -241,18 +243,18 @@ const HangoutsPage = () => {
                     onChange={(e) => setSelectedTimeFilter(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
                   >
-                    <option value="all">All Time</option>
-                    <option value="today">Today</option>
-                    <option value="tomorrow">Tomorrow</option>
-                    <option value="this_week">This Week</option>
-                    <option value="upcoming">Upcoming</option>
+                    <option value="all">{t('hangouts.allTime')}</option>
+                    <option value="today">{t('hangouts.today')}</option>
+                    <option value="tomorrow">{t('hangouts.tomorrow')}</option>
+                    <option value="this_week">{t('hangouts.thisWeek')}</option>
+                    <option value="upcoming">{t('hangouts.upcoming')}</option>
                   </select>
                 </div>
               </div>
 
               {/* Results Count */}
               <div className="text-sm text-gray-600">
-                {filteredHangouts.length} hangout{filteredHangouts.length !== 1 ? 's' : ''} found
+                {filteredHangouts.length} {filteredHangouts.length === 1 ? t('hangouts.hangout') : t('hangouts.hangoutsFound')}
               </div>
             </div>
           </div>
@@ -266,29 +268,29 @@ const HangoutsPage = () => {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="mb-8 bg-white rounded-xl shadow-sm p-6 border border-gray-100"
           >
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Community Stats</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('hangouts.communityStats')}</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary-600">{hangouts.length}</div>
-                <div className="text-sm text-gray-600">Total Hangouts</div>
+                <div className="text-sm text-gray-600">{t('hangouts.totalHangouts')}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600">
                   {hangouts.filter(h => h.status === 'planned').length}
                 </div>
-                <div className="text-sm text-gray-600">Upcoming</div>
+                <div className="text-sm text-gray-600">{t('hangouts.upcomingCount')}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600">
                   {hangouts.filter(h => h.status === 'ongoing').length}
                 </div>
-                <div className="text-sm text-gray-600">Happening Now</div>
+                <div className="text-sm text-gray-600">{t('hangouts.happeningNow')}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-gray-600">
                   {hangouts.reduce((total, h) => total + (h.participants?.filter(p => p.status === 'accepted').length || 0) + 1, 0)}
                 </div>
-                <div className="text-sm text-gray-600">Total Participants</div>
+                <div className="text-sm text-gray-600">{t('hangouts.totalParticipants')}</div>
               </div>
             </div>
           </motion.div>
@@ -332,18 +334,18 @@ const HangoutsPage = () => {
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 {searchTerm || selectedStatus !== 'all' || selectedTimeFilter !== 'all'
-                  ? 'No hangouts found'
+                  ? t('hangouts.noHangoutsFound')
                   : showMyHangouts 
-                    ? 'No hangouts yet' 
-                    : 'No public hangouts available'
+                    ? t('hangouts.noHangoutsYet')
+                    : t('hangouts.noPublicHangouts')
                 }
               </h3>
               <p className="text-gray-600 mb-6">
                 {searchTerm || selectedStatus !== 'all' || selectedTimeFilter !== 'all'
-                  ? 'Try adjusting your search or filters to find more hangouts.'
+                  ? t('hangouts.tryAdjustingFilters')
                   : showMyHangouts
-                    ? 'Create your first hangout to get started!'
-                    : 'Be the first to create a hangout in your area!'
+                    ? t('hangouts.createFirstHangout')
+                    : t('hangouts.beFirstToCreate')
                 }
               </p>
               
@@ -355,7 +357,7 @@ const HangoutsPage = () => {
                   className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 shadow-sm"
                 >
                   <PlusIcon className="h-4 w-4 mr-2" />
-                  Create Hangout
+                  {t('hangouts.createHangout')}
                 </motion.button>
               )}
             </motion.div>

@@ -3,8 +3,10 @@ import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import useTranslation from '../hooks/useTranslation';
 
 const LoginPage = () => {
+  const { t } = useTranslation();
   const { login, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -28,16 +30,16 @@ const LoginPage = () => {
 
     // Email validation
     if (!formData.email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('auth.emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = t('auth.emailInvalid');
     }
 
     // Password validation
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('auth.passwordRequired');
     } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = t('auth.passwordMinLength');
     }
 
     setErrors(newErrors);
@@ -105,10 +107,10 @@ const LoginPage = () => {
             <h1 className="text-3xl font-bold text-primary-600">Foy Lekke</h1>
           </Link>
           <h2 className="text-2xl font-bold text-gray-900">
-            Welcome back
+            {t('auth.welcomeBack')}
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Sign in to your account to continue
+            {t('auth.signInToAccount')}
           </p>
         </div>
 
@@ -124,7 +126,7 @@ const LoginPage = () => {
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email address
+                {t('auth.emailAddress')}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -142,7 +144,7 @@ const LoginPage = () => {
                       ? 'border-red-300 bg-red-50'
                       : 'border-gray-300 bg-white hover:border-gray-400'
                   }`}
-                  placeholder="Enter your email"
+                  placeholder={t('auth.enterEmail')}
                 />
                 {errors.email && (
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -158,7 +160,7 @@ const LoginPage = () => {
             {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -176,7 +178,7 @@ const LoginPage = () => {
                       ? 'border-red-300 bg-red-50'
                       : 'border-gray-300 bg-white hover:border-gray-400'
                   }`}
-                  placeholder="Enter your password"
+                  placeholder={t('auth.enterPassword')}
                 />
                 <button
                   type="button"
@@ -206,7 +208,7 @@ const LoginPage = () => {
                 className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                Remember me
+                {t('auth.rememberMe')}
               </label>
             </div>
             <div className="text-sm">
@@ -214,7 +216,7 @@ const LoginPage = () => {
                 to="/forgot-password"
                 className="font-medium text-primary-600 hover:text-primary-500 transition-colors duration-200"
               >
-                Forgot your password?
+                {t('auth.forgotPassword')}
               </Link>
             </div>
           </div>
@@ -230,22 +232,22 @@ const LoginPage = () => {
             {isLoading ? (
               <div className="flex items-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Signing in...
+                {t('auth.signingIn')}
               </div>
             ) : (
-              'Sign in'
+              t('auth.signIn')
             )}
           </motion.button>
 
           {/* Sign Up Link */}
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
+              {t('auth.dontHaveAccount')}{' '}
               <Link
                 to="/register"
                 className="font-medium text-primary-600 hover:text-primary-500 transition-colors duration-200"
               >
-                Sign up here
+                {t('auth.signUpHere')}
               </Link>
             </p>
           </div>
@@ -258,10 +260,10 @@ const LoginPage = () => {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg"
         >
-          <h3 className="text-sm font-medium text-blue-800 mb-2">Demo Credentials</h3>
+          <h3 className="text-sm font-medium text-blue-800 mb-2">{t('auth.demoCredentials')}</h3>
           <div className="text-xs text-blue-700 space-y-1">
-            <p><strong>User:</strong> demo@foylekke.com / demo123</p>
-            <p><strong>Business:</strong> business@foylekke.com / business123</p>
+            <p><strong>{t('auth.user')}:</strong> demo@foylekke.com / demo123</p>
+            <p><strong>{t('auth.business')}:</strong> business@foylekke.com / business123</p>
           </div>
         </motion.div>
       </motion.div>
@@ -269,4 +271,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage; 
+export default LoginPage;   

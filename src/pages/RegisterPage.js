@@ -3,8 +3,10 @@ import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, User, AlertCircle, Check } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import useTranslation from '../hooks/useTranslation';
 
 const RegisterPage = () => {
+  const { t } = useTranslation();
   const { register, isAuthenticated, loading } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
@@ -28,32 +30,32 @@ const RegisterPage = () => {
 
     // Name validation
     if (!formData.name) {
-      newErrors.name = 'Full name is required';
+      newErrors.name = t('auth.nameRequired');
     } else if (formData.name.length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
+      newErrors.name = t('auth.nameMinLength');
     }
 
     // Email validation
     if (!formData.email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('auth.emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = t('auth.emailInvalid');
     }
 
     // Password validation
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('auth.passwordRequired');
     } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = t('auth.passwordMinLength');
     } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = 'Password must contain at least one uppercase letter, one lowercase letter, and one number';
+      newErrors.password = t('auth.passwordComplex');
     }
 
     // Confirm password validation
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
+      newErrors.confirmPassword = t('auth.confirmPasswordRequired');
     } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = t('auth.passwordsDoNotMatch');
     }
 
     setErrors(newErrors);
@@ -151,7 +153,7 @@ const RegisterPage = () => {
             {/* Name Field */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name
+                {t('auth.fullName')}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -169,7 +171,7 @@ const RegisterPage = () => {
                       ? 'border-red-300 bg-red-50'
                       : 'border-gray-300 bg-white hover:border-gray-400'
                   }`}
-                  placeholder="Enter your full name"
+                  placeholder={t('auth.enterFullName')}
                 />
                 {errors.name && (
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -282,7 +284,7 @@ const RegisterPage = () => {
             {/* Confirm Password Field */}
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm Password
+                {t('auth.confirmPassword')}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -302,7 +304,7 @@ const RegisterPage = () => {
                       ? 'border-green-300 bg-green-50'
                       : 'border-gray-300 bg-white hover:border-gray-400'
                   }`}
-                  placeholder="Confirm your password"
+                  placeholder={t('auth.confirmYourPassword')}
                 />
                 <button
                   type="button"
@@ -382,10 +384,10 @@ const RegisterPage = () => {
             {isLoading ? (
               <div className="flex items-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Creating account...
+                {t('auth.creatingAccount')}
               </div>
             ) : (
-              'Create account'
+              t('auth.createAccountButton')
             )}
           </motion.button>
 

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useQuery, useQueryClient } from 'react-query';
 import { 
   MapPin, 
@@ -30,7 +29,6 @@ import {
   ThumbsUp,
   ThumbsDown,
   Menu,
-  Plus,
   UserPlus
 } from 'lucide-react';
 import { placesAPI } from '../services/api';
@@ -47,8 +45,11 @@ import {
 } from '../utils/imageUtils';
 import { toast } from 'react-hot-toast';
 import ReviewsList from '../components/reviews/ReviewsList';
+import ReviewsDebug from '../components/debug/ReviewsDebug';
+import useTranslation from '../hooks/useTranslation';
 
 const PlaceDetailPage = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated, toggleFavorite } = useAuth();
@@ -58,7 +59,6 @@ const PlaceDetailPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [votes, setVotes] = useState({ upvotes: 0, downvotes: 0, userVote: null });
   const [isVoting, setIsVoting] = useState(false);
-  const [showCreateHangoutModal, setShowCreateHangoutModal] = useState(false);
 
   // Fetch place details
   const { data: place, isLoading, error } = useQuery(
@@ -94,7 +94,7 @@ const PlaceDetailPage = () => {
 
   const handleVote = async (voteType) => {
     if (!user) {
-      toast.error('Please log in to vote');
+      toast.error(t('places.detail.loginToVote'));
       return;
     }
 
@@ -109,7 +109,7 @@ const PlaceDetailPage = () => {
           [voteType === 'upvote' ? 'upvotes' : 'downvotes']: prev[voteType === 'upvote' ? 'upvotes' : 'downvotes'] - 1,
           userVote: null
         }));
-        toast.success('Vote removed');
+        toast.success(t('places.detail.voteRemoved'));
       } else {
         await placesAPI.voteOnPlace(place._id, voteType);
         
@@ -131,11 +131,11 @@ const PlaceDetailPage = () => {
           return newVotes;
         });
         
-        toast.success(`${voteType === 'upvote' ? 'Upvoted' : 'Downvoted'} successfully`);
+        toast.success(voteType === 'upvote' ? t('places.detail.upvotedSuccessfully') : t('places.detail.downvotedSuccessfully'));
       }
     } catch (error) {
       console.error('Error voting:', error);
-      toast.error('Failed to vote. Please try again.');
+      toast.error(t('places.detail.failedToVote'));
     } finally {
       setIsVoting(false);
     }
@@ -143,7 +143,7 @@ const PlaceDetailPage = () => {
 
   const handleFavoriteClick = async () => {
     if (!isAuthenticated) {
-      toast.error('Please log in to save favorites');
+      toast.error(t('places.detail.loginToSaveFavorites'));
       return;
     }
     await toggleFavorite(id);
@@ -250,7 +250,7 @@ const PlaceDetailPage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading place details...</p>
+          <p className="mt-4 text-gray-600">{t('places.detail.loading')}</p>
         </div>
       </div>
     );
@@ -260,13 +260,13 @@ const PlaceDetailPage = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Place Not Found</h1>
-          <p className="text-gray-600 mb-6">The place you're looking for doesn't exist or has been removed.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('places.detail.notFound')}</h1>
+          <p className="text-gray-600 mb-6">{t('places.detail.notFoundMessage')}</p>
           <button
             onClick={() => navigate('/places')}
             className="bg-primary-500 hover:bg-primary-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
           >
-            Browse All Places
+            {t('places.detail.browseAllPlaces')}
           </button>
         </div>
       </div>
@@ -791,6 +791,9 @@ const PlaceDetailPage = () => {
 
             {activeTab === 'reviews' && (
               <div className="space-y-6">
+                {/* Debug Section - Remove in production */}
+                <ReviewsDebug placeId={id} />
+                
                 <ReviewsList
                   placeId={id}
                   placeName={place?.name}

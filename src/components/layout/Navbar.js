@@ -18,9 +18,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import SearchModal from '../search/SearchModal';
 import DemoModeToggle from '../ads/DemoModeToggle';
 import NotificationBell from '../notifications/NotificationBell';
+import LanguageSelector from '../ui/LanguageSelector';
+import useTranslation from '../../hooks/useTranslation';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
+  const { t } = useTranslation();
   const location = useLocation();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -29,10 +32,10 @@ const Navbar = () => {
   // Role-based navigation items
   const getNavItems = () => {
     const baseItems = [
-      { name: 'Home', path: '/', icon: Home },
-      { name: 'Places', path: '/places', icon: MapPin },
-      { name: 'Hangouts', path: '/hangouts', icon: Users },
-      { name: 'Reviews', path: '/reviews', icon: Star },
+      { name: t('nav.home'), path: '/', icon: Home },
+      { name: t('nav.places'), path: '/places', icon: MapPin },
+      { name: t('nav.hangouts'), path: '/hangouts', icon: Users },
+      { name: t('nav.reviews'), path: '/reviews', icon: Star },
     ];
 
     if (!isAuthenticated) return baseItems;
@@ -42,7 +45,7 @@ const Navbar = () => {
     
     if (user?.role === 'admin') {
       roleSpecificItems.push({
-        name: 'Admin Dashboard',
+        name: t('nav.adminDashboard'),
         path: '/admin',
         icon: Settings,
         roleSpecific: true
@@ -51,7 +54,7 @@ const Navbar = () => {
     
     if (user?.role === 'advertiser') {
       roleSpecificItems.push({
-        name: 'Ad Dashboard',
+        name: t('nav.adDashboard'),
         path: '/advertiser',
         icon: Settings,
         roleSpecific: true
@@ -60,7 +63,7 @@ const Navbar = () => {
     
     if (user?.role === 'business') {
       roleSpecificItems.push({
-        name: 'Restaurant Dashboard',
+        name: t('nav.restaurantDashboard'),
         path: '/restaurant',
         icon: Settings,
         roleSpecific: true
@@ -93,7 +96,7 @@ const Navbar = () => {
               </motion.div>
               <div className="hidden sm:block">
                 <h1 className="text-xl font-bold text-gradient">Foy Lekke</h1>
-                <p className="text-xs text-gray-500">Discover Amazing Places</p>
+                <p className="text-xs text-gray-500">{t('nav.tagline')}</p>
               </div>
             </Link>
 
@@ -130,11 +133,16 @@ const Navbar = () => {
               })}
             </div>
 
-            {/* Search, Demo Toggle and User Actions */}
+            {/* Search, Demo Toggle, Language Selector and User Actions */}
             <div className="flex items-center space-x-4">
               {/* Demo Mode Toggle */}
               <div className="hidden sm:block">
                 <DemoModeToggle />
+              </div>
+
+              {/* Language Selector */}
+              <div className="hidden sm:block">
+                <LanguageSelector />
               </div>
 
               {/* Search Button */}
@@ -199,7 +207,7 @@ const Navbar = () => {
                         className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200"
                       >
                         <User size={16} />
-                        <span>My Profile</span>
+                        <span>{t('nav.myProfile')}</span>
                       </Link>
                       
                       <Link
@@ -208,7 +216,7 @@ const Navbar = () => {
                         className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200"
                       >
                         <Plus size={16} />
-                        <span>Create Hangout</span>
+                        <span>{t('nav.createHangout')}</span>
                       </Link>
 
                       <Link
@@ -217,7 +225,7 @@ const Navbar = () => {
                         className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors duration-200"
                       >
                         <Settings size={16} />
-                        <span>Settings</span>
+                        <span>{t('nav.settings')}</span>
                       </Link>
 
                       {/* Divider */}
@@ -229,7 +237,7 @@ const Navbar = () => {
                         className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 transition-colors duration-200 w-full text-left"
                       >
                         <LogOut size={16} />
-                        <span>Logout</span>
+                        <span>{t('nav.logout')}</span>
                       </button>
                     </motion.div>
                   )}
@@ -240,13 +248,13 @@ const Navbar = () => {
                     to="/login"
                     className="px-4 py-2 text-gray-700 hover:text-primary-600 font-medium transition-colors duration-200"
                   >
-                    Login
+                    {t('nav.login')}
                   </Link>
                   <Link
                     to="/register"
                     className="btn-primary"
                   >
-                    Sign Up
+                    {t('nav.signUp')}
                   </Link>
                 </div>
               )}
@@ -340,7 +348,7 @@ const Navbar = () => {
                       className="flex items-center space-x-3 px-3 py-3 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-200"
                     >
                       <User size={20} />
-                      <span className="font-medium">My Profile</span>
+                      <span className="font-medium">{t('nav.myProfile')}</span>
                     </Link>
                     
                     <Link
@@ -349,7 +357,7 @@ const Navbar = () => {
                       className="flex items-center space-x-3 px-3 py-3 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-200"
                     >
                       <Plus size={20} />
-                      <span className="font-medium">Create Hangout</span>
+                      <span className="font-medium">{t('nav.createHangout')}</span>
                     </Link>
 
                     <Link
@@ -358,12 +366,17 @@ const Navbar = () => {
                       className="flex items-center space-x-3 px-3 py-3 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-200"
                     >
                       <Settings size={20} />
-                      <span className="font-medium">Settings</span>
+                      <span className="font-medium">{t('nav.settings')}</span>
                     </Link>
 
                     {/* Demo Mode Toggle for Mobile */}
                     <div className="px-3 py-2">
                       <DemoModeToggle />
+                    </div>
+
+                    {/* Language Selector for Mobile */}
+                    <div className="px-3 py-2">
+                      <LanguageSelector />
                     </div>
 
                     {/* Logout */}
@@ -372,7 +385,7 @@ const Navbar = () => {
                       className="flex items-center space-x-3 px-3 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 w-full text-left"
                     >
                       <LogOut size={20} />
-                      <span className="font-medium">Logout</span>
+                      <span className="font-medium">{t('nav.logout')}</span>
                     </button>
                   </>
                 )}
@@ -384,6 +397,11 @@ const Navbar = () => {
                       <DemoModeToggle />
                     </div>
                     
+                    {/* Language Selector for Mobile - Non-authenticated */}
+                    <div className="px-3 py-2">
+                      <LanguageSelector />
+                    </div>
+                    
                     <div className="border-t border-gray-200 my-2"></div>
                     
                     <Link
@@ -392,7 +410,7 @@ const Navbar = () => {
                       className="flex items-center space-x-3 px-3 py-3 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-200"
                     >
                       <User size={20} />
-                      <span className="font-medium">Login</span>
+                      <span className="font-medium">{t('nav.login')}</span>
                     </Link>
                     
                     <Link
@@ -401,7 +419,7 @@ const Navbar = () => {
                       className="flex items-center space-x-3 px-3 py-3 bg-primary-600 text-white hover:bg-primary-700 rounded-lg transition-colors duration-200"
                     >
                       <Plus size={20} />
-                      <span className="font-medium">Sign Up</span>
+                      <span className="font-medium">{t('nav.signUp')}</span>
                     </Link>
                   </>
                 )}

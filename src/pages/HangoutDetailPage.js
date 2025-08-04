@@ -30,6 +30,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { hangoutsAPI } from '../services/api';
 import { toast } from 'react-hot-toast';
 import UserSearch from '../components/users/UserSearch';
+import HangoutMessaging from '../components/hangouts/HangoutMessaging';
+import useTranslation from '../hooks/useTranslation';
 import { 
   getImageUrls, 
   hasValidImages, 
@@ -38,6 +40,7 @@ import {
 } from '../utils/imageUtils';
 
 const HangoutDetailPage = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -64,10 +67,10 @@ const HangoutDetailPage = () => {
   const joinMutation = useMutation(hangoutsAPI.joinHangout, {
     onSuccess: () => {
       queryClient.invalidateQueries(['hangout', id]);
-      toast.success('Successfully joined the hangout!');
+      toast.success(t('hangouts.successfullyJoined'));
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to join hangout');
+      toast.error(error.response?.data?.message || t('hangouts.failedToSendJoinRequest'));
     }
   });
 
@@ -75,10 +78,10 @@ const HangoutDetailPage = () => {
   const leaveMutation = useMutation(hangoutsAPI.leaveHangout, {
     onSuccess: () => {
       queryClient.invalidateQueries(['hangout', id]);
-      toast.success('Left the hangout');
+      toast.success(t('hangouts.leftHangout'));
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to leave hangout');
+      toast.error(error.response?.data?.message || t('hangouts.failedToLeave'));
     }
   });
 
@@ -89,10 +92,10 @@ const HangoutDetailPage = () => {
       onSuccess: () => {
         setShowJoinRequestModal(false);
         setJoinRequestMessage('');
-        toast.success('Join request sent!');
+        toast.success(t('hangouts.joinRequestSent'));
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Failed to send join request');
+        toast.error(error.response?.data?.message || t('hangouts.failedToSendJoinRequest'));
       }
     }
   );
@@ -103,11 +106,11 @@ const HangoutDetailPage = () => {
     {
       onSuccess: (data, variables) => {
         queryClient.invalidateQueries(['hangout', id]);
-        const action = variables.response === 'accept' ? 'approved' : 'rejected';
-        toast.success(`Join request ${action}!`);
+        const action = variables.response === 'accept' ? t('hangouts.joinRequestApproved') : t('hangouts.joinRequestRejected');
+        toast.success(action);
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Failed to respond to request');
+        toast.error(error.response?.data?.message || t('hangouts.failedToRespond'));
       }
     }
   );
@@ -119,10 +122,10 @@ const HangoutDetailPage = () => {
       onSuccess: () => {
         setShowInviteModal(false);
         setSelectedUsersToInvite([]);
-        toast.success('Invitations sent!');
+        toast.success(t('hangouts.invitationsSent'));
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Failed to send invitations');
+        toast.error(error.response?.data?.message || t('hangouts.failedToSendInvitations'));
       }
     }
   );
@@ -146,10 +149,10 @@ const HangoutDetailPage = () => {
       if (address.region) parts.push(address.region);
       if (address.city) parts.push(address.city);
       if (address.country) parts.push(address.country);
-      return parts.length > 0 ? parts.join(', ') : 'Address not specified';
+      return parts.length > 0 ? parts.join(', ') : t('hangouts.addressNotSpecified');
     }
     
-    return 'Address not specified';
+    return t('hangouts.addressNotSpecified');
   };
 
   const formatDateTime = (dateTime) => {
@@ -160,9 +163,9 @@ const HangoutDetailPage = () => {
     
     let dateLabel;
     if (date.toDateString() === today.toDateString()) {
-      dateLabel = 'Today';
+      dateLabel = t('hangouts.today');
     } else if (date.toDateString() === tomorrow.toDateString()) {
-      dateLabel = 'Tomorrow';
+      dateLabel = t('hangouts.tomorrow');
     } else {
       dateLabel = date.toLocaleDateString('en-US', { 
         weekday: 'long', 
@@ -211,14 +214,14 @@ const HangoutDetailPage = () => {
   };
 
   const handleLeave = () => {
-    if (window.confirm('Are you sure you want to leave this hangout?')) {
+    if (window.confirm(t('hangouts.confirmLeaveHangout'))) {
       leaveMutation.mutate(id);
     }
   };
 
   const handleSendInvitation = () => {
     if (selectedUsersToInvite.length === 0) {
-      toast.error('Please select users to invite');
+      toast.error(t('hangouts.pleaseSelectUsers'));
       return;
     }
 
@@ -258,7 +261,7 @@ const HangoutDetailPage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading hangout details...</p>
+          <p className="mt-4 text-gray-600">{t('hangouts.loadingHangoutDetails')}</p>
         </div>
       </div>
     );
@@ -270,18 +273,18 @@ const HangoutDetailPage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <ExclamationTriangleIcon className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Hangout Not Found</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('hangouts.hangoutNotFound')}</h2>
           <p className="text-gray-600 mb-4">
             {error.response?.status === 403 
-              ? "You don't have access to this private hangout."
-              : "This hangout doesn't exist or has been removed."
+              ? t('hangouts.noAccessPrivateHangout')
+              : t('hangouts.hangoutNotExistRemoved')
             }
           </p>
           <button
             onClick={() => navigate('/hangouts')}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
           >
-            Browse Hangouts
+            {t('hangouts.browseHangouts')}
           </button>
         </div>
       </div>
@@ -548,9 +551,9 @@ const HangoutDetailPage = () => {
                   <div className="flex-1">
                     <p className="font-medium text-gray-900">
                       {hangout.creator?.name || 'Anonymous'}
-                      {isCreator && <span className="text-primary-600 ml-2">(You)</span>}
+                      {isCreator && <span className="text-primary-600 ml-2">{t('hangouts.youLabel')}</span>}
                     </p>
-                    <p className="text-sm text-gray-600">{hangout.creator?.email || 'No email'}</p>
+                    <p className="text-sm text-gray-600">{hangout.creator?.email || t('hangouts.noEmail')}</p>
                   </div>
                   <span className="px-2 py-1 bg-primary-100 text-primary-800 text-xs font-medium rounded">
                     Organizer
@@ -581,9 +584,9 @@ const HangoutDetailPage = () => {
                         <div className="flex-1">
                           <p className="font-medium text-gray-900">
                             {participant.user?.name || 'Anonymous'}
-                            {participant.user?._id === user?._id && <span className="text-green-600 ml-2">(You)</span>}
+                            {participant.user?._id === user?._id && <span className="text-green-600 ml-2">{t('hangouts.youLabel')}</span>}
                           </p>
-                          <p className="text-sm text-gray-600">{participant.user?.email || 'No email'}</p>
+                          <p className="text-sm text-gray-600">{participant.user?.email || t('hangouts.noEmail')}</p>
                         </div>
                         <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
                           Joined
@@ -616,7 +619,7 @@ const HangoutDetailPage = () => {
                         )}
                         <div className="flex-1">
                           <p className="font-medium text-gray-900">{participant.user?.name || 'Anonymous'}</p>
-                          <p className="text-sm text-gray-600">{participant.user?.email || 'No email'}</p>
+                          <p className="text-sm text-gray-600">{participant.user?.email || t('hangouts.noEmail')}</p>
                         </div>
                         <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded">
                           Pending
@@ -647,28 +650,28 @@ const HangoutDetailPage = () => {
               transition={{ delay: 0.3 }}
               className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
             >
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Event Details</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('hangouts.eventDetails')}</h3>
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
                   <CalendarDaysIcon className="h-5 w-5 text-gray-400 mt-0.5" />
                   <div>
-                    <p className="text-sm text-gray-600">Date</p>
+                    <p className="text-sm text-gray-600">{t('hangouts.date')}</p>
                     <p className="font-medium text-gray-900">{dateLabel}</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
                   <ClockIcon className="h-5 w-5 text-gray-400 mt-0.5" />
                   <div>
-                    <p className="text-sm text-gray-600">Time</p>
+                    <p className="text-sm text-gray-600">{t('hangouts.time')}</p>
                     <p className="font-medium text-gray-900">{timeLabel}</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
                   <UsersIcon className="h-5 w-5 text-gray-400 mt-0.5" />
                   <div>
-                    <p className="text-sm text-gray-600">Participants</p>
+                    <p className="text-sm text-gray-600">{t('hangouts.participants')}</p>
                     <p className="font-medium text-gray-900">
-                      {totalParticipants}{hangout.maxParticipants ? ` of ${hangout.maxParticipants}` : ''}
+                      {totalParticipants}{hangout.maxParticipants ? ` ${t('hangouts.of')} ${hangout.maxParticipants}` : ''}
                     </p>
                   </div>
                 </div>
@@ -676,7 +679,7 @@ const HangoutDetailPage = () => {
                   <div className="flex items-start space-x-3">
                     <MapPinIcon className="h-5 w-5 text-gray-400 mt-0.5" />
                     <div>
-                      <p className="text-sm text-gray-600">Location</p>
+                      <p className="text-sm text-gray-600">{t('hangouts.location')}</p>
                       <p className="font-medium text-gray-900">{hangout.place.name}</p>
                     </div>
                   </div>
@@ -691,7 +694,7 @@ const HangoutDetailPage = () => {
               transition={{ delay: 0.4 }}
               className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
             >
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Organizer</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('hangouts.organizer')}</h3>
               <div className="flex items-center space-x-3 mb-4">
                 {hangout.creator?.profilePicture ? (
                   <img
@@ -706,21 +709,34 @@ const HangoutDetailPage = () => {
                 )}
                 <div>
                   <p className="font-medium text-gray-900">
-                    {hangout.creator?.name || 'Anonymous Organizer'}
-                    {isCreator && <span className="text-primary-600 ml-2">(You)</span>}
+                    {hangout.creator?.name || t('hangouts.anonymousOrganizer')}
+                    {isCreator && <span className="text-primary-600 ml-2">{t('hangouts.youLabel')}</span>}
                   </p>
-                  <p className="text-sm text-gray-600">{hangout.creator?.email || 'No email'}</p>
+                  <p className="text-sm text-gray-600">{hangout.creator?.email || t('hangouts.noEmail')}</p>
                 </div>
               </div>
               {!isCreator && (
                 <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center space-x-2 transition-colors">
                   <ChatBubbleLeftIcon className="h-4 w-4" />
-                  <span>Send Message</span>
+                  <span>{t('hangouts.sendMessage')}</span>
                 </button>
               )}
             </motion.div>
           </div>
         </div>
+
+        {/* Messaging Component - Only show for participants */}
+        {(isParticipant || isCreator) && (
+          <div className="lg:col-span-2 xl:col-span-3">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <HangoutMessaging hangoutId={id} />
+            </motion.div>
+          </div>
+        )}
 
         {/* Invite Modal */}
         <AnimatePresence>
@@ -738,7 +754,7 @@ const HangoutDetailPage = () => {
                 className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto"
               >
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Invite Friends to Hangout</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">{t('hangouts.inviteFriendsToHangout')}</h3>
                   <button
                     onClick={() => setShowInviteModal(false)}
                     className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -752,14 +768,14 @@ const HangoutDetailPage = () => {
                     onUserSelect={handleAddUserToInvite}
                     selectedUsers={selectedUsersToInvite}
                     onRemoveUser={handleRemoveUserFromInvite}
-                    placeholder="Search friends by name, email, or phone..."
+                    placeholder={t('hangouts.searchFriendsPlaceholder')}
                     maxSelections={10}
                   />
                 </div>
 
                 <div className="flex justify-between items-center pt-4 border-t border-gray-200">
                   <div className="text-sm text-gray-600">
-                    {selectedUsersToInvite.length} user{selectedUsersToInvite.length !== 1 ? 's' : ''} selected
+                    {selectedUsersToInvite.length} {selectedUsersToInvite.length === 1 ? t('hangouts.userSelected') : t('hangouts.usersSelected')}
                   </div>
                   <div className="flex space-x-3">
                     <button
@@ -769,7 +785,7 @@ const HangoutDetailPage = () => {
                       }}
                       className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                      Cancel
+                      {t('hangouts.cancel')}
                     </button>
                     <button
                       onClick={handleSendInvitation}
@@ -777,7 +793,7 @@ const HangoutDetailPage = () => {
                       className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
                     >
                       <UserPlusIcon className="h-4 w-4" />
-                      <span>{sendInvitationsMutation.isLoading ? 'Sending...' : 'Send Invitations'}</span>
+                      <span>{sendInvitationsMutation.isLoading ? t('hangouts.sending') : t('hangouts.sendInvitations')}</span>
                     </button>
                   </div>
                 </div>
@@ -801,25 +817,25 @@ const HangoutDetailPage = () => {
                 exit={{ scale: 0.95, opacity: 0 }}
                 className="bg-white rounded-xl shadow-xl max-w-md w-full p-6"
               >
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Request to Join</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('hangouts.requestToJoin')}</h3>
                 <p className="text-gray-600 mb-4">
-                  Send a message to the organizer explaining why you'd like to join this hangout.
+                  {t('hangouts.sendMessageToOrganizer')}
                 </p>
                 
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Message (Optional)
+                    {t('hangouts.messageOptional')}
                   </label>
                   <textarea
                     value={joinRequestMessage}
                     onChange={(e) => setJoinRequestMessage(e.target.value)}
-                    placeholder="Hi! I'd love to join this hangout because..."
+                    placeholder={t('hangouts.joinRequestPlaceholder')}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     maxLength={200}
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    {joinRequestMessage.length}/200 characters
+                    {joinRequestMessage.length}/200 {t('hangouts.characters')}
                   </p>
                 </div>
 
@@ -828,14 +844,14 @@ const HangoutDetailPage = () => {
                     onClick={() => setShowJoinRequestModal(false)}
                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    Cancel
+                    {t('hangouts.cancel')}
                   </button>
                   <button
                     onClick={handleJoinRequest}
                     disabled={requestJoinMutation.isLoading}
                     className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    {requestJoinMutation.isLoading ? 'Sending...' : 'Send Request'}
+                    {requestJoinMutation.isLoading ? t('hangouts.sending') : t('hangouts.sendRequest')}
                   </button>
                 </div>
               </motion.div>

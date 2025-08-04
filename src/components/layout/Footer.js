@@ -10,29 +10,31 @@ import {
   Instagram,
   Heart
 } from 'lucide-react';
+import useTranslation from '../../hooks/useTranslation';
 
 const Footer = () => {
+  const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
 
   const footerLinks = {
-    'Discover': [
-      { name: 'Restaurants', path: '/places?type=restaurant' },
-      { name: 'Parks', path: '/places?type=park' },
-      { name: 'Museums', path: '/places?type=museum' },
-      { name: 'Shopping Centers', path: '/places?type=shopping_center' },
-      { name: 'Hotels', path: '/places?type=hotel' },
+    [t('footer.discover')]: [
+      { name: t('footer.restaurants'), path: '/places?type=restaurant' },
+      { name: t('footer.parks'), path: '/places?type=park' },
+      { name: t('footer.museums'), path: '/places?type=museum' },
+      { name: t('footer.shoppingCenters'), path: '/places?type=shopping_center' },
+      { name: t('footer.hotels'), path: '/places?type=hotel' },
     ],
-    'Community': [
-      { name: 'Hangouts', path: '/hangouts' },
-      { name: 'Reviews', path: '/places' },
-      { name: 'Events', path: '/hangouts' },
-      { name: 'Local Guides', path: '/places' },
+    [t('footer.community')]: [
+      { name: t('footer.hangouts'), path: '/hangouts' },
+      { name: t('footer.reviews'), path: '/places' },
+      { name: t('footer.events'), path: '/hangouts' },
+      { name: t('footer.localGuides'), path: '/places' },
     ],
-    'Support': [
-      { name: 'Help Center', path: '/help' },
-      { name: 'Contact Us', path: '/contact' },
-      { name: 'Privacy Policy', path: '/privacy' },
-      { name: 'Terms of Service', path: '/terms' },
+    [t('footer.support')]: [
+      { name: t('footer.helpCenter'), path: '/help' },
+      { name: t('footer.contactUs'), path: '/contact' },
+      { name: t('footer.privacyPolicy'), path: '/privacy' },
+      { name: t('footer.termsOfService'), path: '/terms' },
     ],
   };
 
@@ -57,12 +59,11 @@ const Footer = () => {
               </motion.div>
               <div>
                 <h3 className="text-xl font-bold text-gradient">Foy Lekke</h3>
-                <p className="text-sm text-gray-400">Discover Amazing Places</p>
+                <p className="text-sm text-gray-400">{t('footer.tagline')}</p>
               </div>
             </Link>
             <p className="text-gray-400 mb-4">
-              Your ultimate guide to discovering the best places in Senegal. 
-              From restaurants to parks, museums to shopping centers.
+              {t('footer.description')}
             </p>
             <div className="flex space-x-4">
               {socialLinks.map((social) => {
@@ -109,21 +110,21 @@ const Footer = () => {
             <div className="flex items-center space-x-3">
               <MapPin size={20} className="text-primary-400" />
               <div>
-                <p className="text-sm font-medium text-white">Location</p>
+                <p className="text-sm font-medium text-white">{t('footer.location')}</p>
                 <p className="text-sm text-gray-400">Dakar, Senegal</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
               <Phone size={20} className="text-primary-400" />
               <div>
-                <p className="text-sm font-medium text-white">Phone</p>
+                <p className="text-sm font-medium text-white">{t('footer.phone')}</p>
                 <p className="text-sm text-gray-400">+221 33 XXX XX XX</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
               <Mail size={20} className="text-primary-400" />
               <div>
-                <p className="text-sm font-medium text-white">Email</p>
+                <p className="text-sm font-medium text-white">{t('footer.email')}</p>
                 <p className="text-sm text-gray-400">contact@foylekke.com</p>
               </div>
             </div>
@@ -134,12 +135,12 @@ const Footer = () => {
         <div className="mt-8 pt-8 border-t border-gray-800">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-sm text-gray-400">
-              © {currentYear} Foy Lekke. All rights reserved.
+              © {currentYear} Foy Lekke. {t('footer.allRightsReserved')}
             </p>
             <div className="flex items-center space-x-2 text-sm text-gray-400">
-              <span>Made with</span>
+              <span>{t('footer.madeWith')}</span>
               <Heart size={14} className="text-red-500 fill-current" />
-              <span>in Senegal</span>
+              <span>{t('footer.inSenegal')}</span>
             </div>
           </div>
         </div>

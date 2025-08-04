@@ -20,8 +20,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { hangoutsAPI, placesAPI } from '../services/api';
 import PlaceCard from '../components/places/PlaceCard';
 import { toast } from 'react-hot-toast';
+import useTranslation from '../hooks/useTranslation';
 
 const CreateHangoutPage = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -69,14 +71,14 @@ const CreateHangoutPage = () => {
   );
 
   const categories = [
-    'Food & Dining',
-    'Social',
-    'Outdoor',
-    'Cultural',
-    'Sports',
-    'Entertainment',
-    'Business',
-    'Education'
+    { key: 'foodDining', label: t('createHangout.categories.foodDining') },
+    { key: 'social', label: t('createHangout.categories.social') },
+    { key: 'outdoor', label: t('createHangout.categories.outdoor') },
+    { key: 'cultural', label: t('createHangout.categories.cultural') },
+    { key: 'sports', label: t('createHangout.categories.sports') },
+    { key: 'entertainment', label: t('createHangout.categories.entertainment') },
+    { key: 'business', label: t('createHangout.categories.business') },
+    { key: 'education', label: t('createHangout.categories.education') }
   ];
 
   const handleInputChange = (field, value) => {
@@ -298,18 +300,18 @@ const CreateHangoutPage = () => {
                 className="space-y-6"
               >
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  Basic Information
+                  {t('createHangout.basicInformation')}
                 </h2>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Hangout Title *
+                    {t('createHangout.hangoutTitle')}
                   </label>
                   <input
                     type="text"
                     value={formData.title}
                     onChange={(e) => handleInputChange('title', e.target.value)}
-                    placeholder="e.g., Dakar Food Tour, Coffee & Chat"
+                    placeholder={t('createHangout.hangoutTitlePlaceholder')}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     maxLength={100}
                   />
@@ -317,24 +319,24 @@ const CreateHangoutPage = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description *
+                    {t('createHangout.description')}
                   </label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
-                    placeholder="Describe what you'll be doing, what to expect, and any special instructions..."
+                    placeholder={t('createHangout.descriptionPlaceholder')}
                     rows={4}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     maxLength={500}
                   />
                   <p className="text-sm text-gray-500 mt-1">
-                    {formData.description.length}/500 characters
+                    {formData.description.length}/500 {t('createHangout.charactersCount')}
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Category *
+                    {t('createHangout.category')}
                   </label>
                   <select
                     value={formData.category}
@@ -342,8 +344,8 @@ const CreateHangoutPage = () => {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   >
                     {categories.map(category => (
-                      <option key={category} value={category}>
-                        {category}
+                      <option key={category.key} value={category.label}>
+                        {category.label}
                       </option>
                     ))}
                   </select>
@@ -351,7 +353,7 @@ const CreateHangoutPage = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tags
+                    {t('createHangout.tags')}
                   </label>
                   <div className="flex items-center space-x-2 mb-2">
                     <input
@@ -359,7 +361,7 @@ const CreateHangoutPage = () => {
                       value={newTag}
                       onChange={(e) => setNewTag(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                      placeholder="Add tags (e.g., food, fun, weekend)"
+                      placeholder={t('createHangout.tagsPlaceholder')}
                       className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                     <button
@@ -367,7 +369,7 @@ const CreateHangoutPage = () => {
                       onClick={addTag}
                       className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
                     >
-                      Add
+                      {t('createHangout.add')}
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -399,13 +401,13 @@ const CreateHangoutPage = () => {
                 className="space-y-6"
               >
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  When & How Long
+                  {t('createHangout.whenHowLong')}
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Date *
+                      {t('createHangout.date')}
                     </label>
                     <input
                       type="date"

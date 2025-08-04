@@ -15,9 +15,12 @@ import { placesAPI } from '../services/api';
 import PlaceCard from '../components/places/PlaceCard';
 import AdManager from '../components/ads/AdManager';
 import FilterSidebar from '../components/places/FilterSidebar';
+import PlacesDebug from '../components/debug/PlacesDebug';
 import { getPlaceTypeConfig } from '../config/placeTypes';
+import useTranslation from '../hooks/useTranslation';
 
 const PlacesPage = () => {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState('grid');
   const [showFilters, setShowFilters] = useState(false);
@@ -75,13 +78,13 @@ const PlacesPage = () => {
   };
 
   const sortOptions = [
-    { value: 'rating', label: 'Rating' },
-    { value: 'votes', label: 'Most Voted' },
-    { value: 'name', label: 'Name' },
-    { value: 'distance', label: 'Distance' },
-    { value: 'price_low', label: 'Price: Low to High' },
-    { value: 'price_high', label: 'Price: High to Low' },
-    { value: 'relevance', label: 'Most Relevant' }
+    { value: 'rating', label: t('places.sort.rating') },
+    { value: 'votes', label: t('places.sort.votes') },
+    { value: 'name', label: t('places.sort.name') },
+    { value: 'distance', label: t('places.sort.distance') },
+    { value: 'price_low', label: t('places.sort.priceLow') },
+    { value: 'price_high', label: t('places.sort.priceHigh') },
+    { value: 'relevance', label: t('places.sort.relevance') }
   ];
 
   const getTypeLabel = (type) => {
@@ -97,8 +100,8 @@ const PlacesPage = () => {
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Error Loading Places</h2>
-            <p className="text-gray-600">Please try again later.</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('places.errorTitle')}</h2>
+            <p className="text-gray-600">{t('places.errorMessage')}</p>
           </div>
         </div>
       </div>
@@ -107,16 +110,21 @@ const PlacesPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Debug Section - Remove in production */}
+      <div className="p-4">
+        <PlacesDebug />
+      </div>
+      
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                Discover Places
+                {t('places.title')}
               </h1>
               <p className="text-gray-600 mt-1">
-                {totalPlaces} places found
+                {totalPlaces} {t('places.placesFound')}
                 {filters.region && ` in ${filters.region}`}
                 {filters.type && ` • ${getTypeLabel(filters.type)}`}
               </p>
@@ -127,7 +135,7 @@ const PlacesPage = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="Search places..."
+                placeholder={t('places.searchPlaceholder')}
                 value={filters.search}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -160,7 +168,7 @@ const PlacesPage = () => {
                   className="lg:hidden flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                 >
                   <SlidersHorizontal size={16} />
-                  <span>Filters</span>
+                  <span>{t('places.filters')}</span>
                   {getActiveFiltersCount() > 0 && (
                     <span className="bg-primary-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                       {getActiveFiltersCount()}
@@ -184,7 +192,7 @@ const PlacesPage = () => {
                     }}
                     className="text-sm text-primary-600 hover:text-primary-700 font-medium"
                   >
-                    Clear all filters
+                    {t('places.clearAllFilters')}
                   </button>
                 )}
               </div>

@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import { useAuth } from '../../contexts/AuthContext';
+import useTranslation from '../../hooks/useTranslation';
 import { 
   getImageUrls, 
   hasValidImages, 
@@ -21,6 +22,7 @@ import {
 } from '../../utils/imageUtils';
 
 const HangoutCard = ({ hangout, onFavorite, isFavorited = false }) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   
   // Handle place images
@@ -37,9 +39,9 @@ const HangoutCard = ({ hangout, onFavorite, isFavorited = false }) => {
     
     let dateLabel;
     if (date.toDateString() === today.toDateString()) {
-      dateLabel = 'Today';
+      dateLabel = t('hangouts.today');
     } else if (date.toDateString() === tomorrow.toDateString()) {
-      dateLabel = 'Tomorrow';
+      dateLabel = t('hangouts.tomorrow');
     } else {
       dateLabel = date.toLocaleDateString('en-US', { 
         weekday: 'short', 
@@ -65,6 +67,17 @@ const HangoutCard = ({ hangout, onFavorite, isFavorited = false }) => {
       case 'completed': return 'bg-gray-100 text-gray-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Get translated status text
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'planned': return t('hangouts.plannedStatus');
+      case 'ongoing': return t('hangouts.ongoingStatus');
+      case 'completed': return t('hangouts.completedStatus');
+      case 'cancelled': return t('hangouts.cancelledStatus');
+      default: return status.charAt(0).toUpperCase() + status.slice(1);
     }
   };
 
@@ -113,14 +126,14 @@ const HangoutCard = ({ hangout, onFavorite, isFavorited = false }) => {
             <div className="flex flex-col space-y-1">
               {/* Status Badge */}
               <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusStyle(hangout.status)}`}>
-                {hangout.status.charAt(0).toUpperCase() + hangout.status.slice(1)}
+                {getStatusText(hangout.status)}
               </span>
               
               {/* Private Badge */}
               {hangout.isPrivate && (
                 <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-900/80 text-white flex items-center">
                   <LockClosedIcon className="h-3 w-3 mr-1" />
-                  Private
+                  {t('hangouts.private')}
                 </span>
               )}
             </div>
@@ -150,7 +163,7 @@ const HangoutCard = ({ hangout, onFavorite, isFavorited = false }) => {
                   ? 'bg-primary-600/90 text-white backdrop-blur-sm' 
                   : 'bg-green-600/90 text-white backdrop-blur-sm'
               }`}>
-                {isCreator ? 'Organizer' : 'Joined'}
+                {isCreator ? t('hangouts.organizer') : t('hangouts.joined')}
               </span>
             </div>
           )}
@@ -183,7 +196,7 @@ const HangoutCard = ({ hangout, onFavorite, isFavorited = false }) => {
               </p>
             ) : (
               <p className="text-gray-400 text-sm italic">
-                No description provided
+                {t('hangouts.noDescriptionProvided')}
               </p>
             )}
           </div>
@@ -192,7 +205,7 @@ const HangoutCard = ({ hangout, onFavorite, isFavorited = false }) => {
           <div className="flex items-center text-sm text-gray-600 mb-3">
             <MapPinIcon className="h-4 w-4 mr-2 text-gray-400" />
             <span className="truncate">
-              {hangout.place?.name || 'Location not specified'}
+              {hangout.place?.name || t('hangouts.locationNotSpecified')}
             </span>
           </div>
 
@@ -202,7 +215,7 @@ const HangoutCard = ({ hangout, onFavorite, isFavorited = false }) => {
               <UsersIcon className="h-4 w-4 mr-2 text-gray-400" />
               <span className="text-sm text-gray-600">
                 {totalParticipants}
-                {hangout.maxParticipants && ` / ${hangout.maxParticipants}`} people
+                {hangout.maxParticipants && ` / ${hangout.maxParticipants}`} {t('hangouts.people')}
               </span>
             </div>
 
@@ -220,7 +233,7 @@ const HangoutCard = ({ hangout, onFavorite, isFavorited = false }) => {
                 </div>
               )}
               <span className="ml-2 text-xs text-gray-500">
-                {isCreator ? 'You' : hangout.creator?.name}
+                {isCreator ? t('hangouts.you') : hangout.creator?.name}
               </span>
             </div>
           </div>
@@ -270,7 +283,7 @@ const HangoutCard = ({ hangout, onFavorite, isFavorited = false }) => {
             ) : (
               <div className="flex items-center text-gray-400 text-sm">
                 <UserIcon className="h-4 w-4 mr-2" />
-                <span className="italic">No participants yet</span>
+                <span className="italic">{t('hangouts.noParticipantsYet')}</span>
               </div>
             )}
           </div>
@@ -300,7 +313,7 @@ const HangoutCard = ({ hangout, onFavorite, isFavorited = false }) => {
             ) : (
               <div className="flex items-center text-gray-400 text-sm">
                 <TagIcon className="h-3 w-3 mr-1" />
-                <span className="italic text-xs">No tags</span>
+                <span className="italic text-xs">{t('hangouts.noTags')}</span>
               </div>
             )}
           </div>

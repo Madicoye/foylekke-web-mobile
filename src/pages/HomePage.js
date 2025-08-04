@@ -16,9 +16,12 @@ import { placesAPI } from '../services/api';
 import PlaceCard from '../components/places/PlaceCard';
 import SearchModal from '../components/search/SearchModal';
 import AdManager from '../components/ads/AdManager';
+import PlacesDebug from '../components/debug/PlacesDebug';
 import { getPopularCuisineTypes, getCuisineTypeConfigs } from '../config/cuisineTypes';
+import useTranslation from '../hooks/useTranslation';
 
 const HomePage = () => {
+  const { t } = useTranslation();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   // Fetch recent places (instead of featured)
@@ -30,7 +33,7 @@ const HomePage = () => {
   // Fetch top places by region
   const { data: topPlacesData = null, isLoading: topLoading, error: topError } = useQuery(
     'topPlaces',
-    () => placesAPI.getTopPlaces('Dakar')
+    () => placesAPI.getTopPlacesByRegion('Dakar')
   );
 
   // Extract places from the API response
@@ -52,41 +55,41 @@ const HomePage = () => {
   const features = [
     {
       icon: MapPin,
-      title: 'Discover Amazing Places',
-      description: 'Find the best restaurants, parks, museums, and more across Senegal.'
+      title: t('home.features.discoverPlaces.title'),
+      description: t('home.features.discoverPlaces.description')
     },
     {
       icon: Users,
-      title: 'Join Social Hangouts',
-      description: 'Connect with locals and travelers through organized meetups and events.'
+      title: t('home.features.socialHangouts.title'),
+      description: t('home.features.socialHangouts.description')
     },
     {
       icon: Star,
-      title: 'Read Authentic Reviews',
-      description: 'Get real insights from our community of place explorers.'
+      title: t('home.features.authenticReviews.title'),
+      description: t('home.features.authenticReviews.description')
     },
     {
       icon: Shield,
-      title: 'Stay Safe',
-      description: 'We prioritize safety and security for all users.'
+      title: t('home.features.staySafe.title'),
+      description: t('home.features.staySafe.description')
     },
     {
       icon: Clock,
-      title: 'Always Updated',
-      description: 'Our database is constantly refreshed with the latest information.'
+      title: t('home.features.alwaysUpdated.title'),
+      description: t('home.features.alwaysUpdated.description')
     },
     {
       icon: TrendingUp,
-      title: 'Trending Places',
-      description: 'Stay in the loop with the most popular and trending places.'
+      title: t('home.features.trendingPlaces.title'),
+      description: t('home.features.trendingPlaces.description')
     }
   ];
 
   const stats = [
-    { number: '500+', label: 'Places Discovered' },
-    { number: '10K+', label: 'Happy Users' },
-    { number: '50+', label: 'Cities Covered' },
-    { number: '1000+', label: 'Reviews Posted' }
+    { number: '500+', label: t('home.stats.placesDiscovered') },
+    { number: '10K+', label: t('home.stats.happyUsers') },
+    { number: '50+', label: t('home.stats.citiesCovered') },
+    { number: '1000+', label: t('home.stats.reviewsPosted') }
   ];
 
   // Get popular cuisine types for the homepage
@@ -95,6 +98,11 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen">
+      {/* Debug Section - Remove in production */}
+      <div className="p-4">
+        <PlacesDebug />
+      </div>
+      
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-primary-500 via-primary-600 to-accent-600 text-white overflow-hidden">
         <div className="absolute inset-0 bg-black opacity-20"></div>
@@ -106,11 +114,11 @@ const HomePage = () => {
               transition={{ duration: 0.8 }}
             >
               <h1 className="text-4xl lg:text-6xl font-bold mb-6 leading-tight">
-                Discover Amazing
-                <span className="block text-accent-300">Places in Senegal</span>
+                {t('home.heroTitle')}
+                <span className="block text-accent-300">{t('home.heroSubtitle')}</span>
               </h1>
               <p className="text-xl lg:text-2xl mb-8 text-gray-100">
-                Your ultimate guide to the best restaurants, parks, museums, and hidden gems across Senegal.
+                {t('home.heroDescription')}
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <motion.button
@@ -120,13 +128,13 @@ const HomePage = () => {
                   className="bg-white text-primary-600 font-semibold py-4 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center justify-center space-x-2"
                 >
                   <MapPin size={20} />
-                  <span>Explore Places</span>
+                  <span>{t('home.exploreButton')}</span>
                 </motion.button>
                 <Link
                   to="/places"
                   className="border-2 border-white text-white font-semibold py-4 px-8 rounded-lg hover:bg-white hover:text-primary-600 transition-colors duration-200 flex items-center justify-center space-x-2"
                 >
-                  <span>View All Places</span>
+                  <span>{t('home.discoverButton')}</span>
                   <ArrowRight size={20} />
                 </Link>
               </div>
@@ -239,10 +247,10 @@ const HomePage = () => {
             className="text-center mb-16"
           >
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              Explore by Cuisine
+              {t('home.exploreByCuisine')}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Discover the diverse flavors and culinary traditions of Senegal
+              {t('home.exploreByCuisineDesc')}
             </p>
           </motion.div>
 
@@ -283,7 +291,7 @@ const HomePage = () => {
               to="/places"
               className="inline-flex items-center space-x-2 bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
             >
-              <span>View All Restaurants</span>
+              <span>{t('home.viewAllRestaurants')}</span>
               <ArrowRight size={20} />
             </Link>
           </div>
@@ -303,17 +311,17 @@ const HomePage = () => {
             >
               <div>
                 <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-                  Recent Places
+                  {t('home.recentPlaces')}
                 </h2>
                 <p className="text-xl text-gray-600">
-                  Latest additions to our collection
+                  {t('home.recentPlacesDesc')}
                 </p>
               </div>
               <Link
                 to="/places"
                 className="btn-primary flex items-center space-x-2"
               >
-                <span>View All</span>
+                <span>{t('home.viewAll')}</span>
                 <ArrowRight size={20} />
               </Link>
             </motion.div>
@@ -359,10 +367,10 @@ const HomePage = () => {
               className="text-center mb-16"
             >
               <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-                Top Places in Dakar
+                {t('home.topPlacesDakar')}
               </h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                The most popular and highly-rated places in the capital
+                {t('home.topPlacesDakarDesc')}
               </p>
             </motion.div>
 
@@ -393,24 +401,23 @@ const HomePage = () => {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl lg:text-4xl font-bold mb-6">
-              Ready to Start Exploring?
+              {t('home.readyToExplore')}
             </h2>
             <p className="text-xl mb-8 text-gray-100 max-w-3xl mx-auto">
-              Join thousands of people discovering amazing places in Senegal. 
-              Create an account to save your favorites and join social hangouts.
+              {t('home.readyToExploreDesc')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/register"
                 className="bg-white text-primary-600 font-semibold py-4 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200"
               >
-                Get Started
+                {t('home.getStarted')}
               </Link>
               <Link
                 to="/places"
                 className="border-2 border-white text-white font-semibold py-4 px-8 rounded-lg hover:bg-white hover:text-primary-600 transition-colors duration-200"
               >
-                Browse Places
+                {t('home.browsePlaces')}
               </Link>
             </div>
           </motion.div>

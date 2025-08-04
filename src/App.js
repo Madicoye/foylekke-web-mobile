@@ -17,15 +17,18 @@ import AdvertiserDashboard from './pages/AdvertiserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import RestaurantDashboard from './pages/RestaurantDashboard';
 import ReviewsPage from './pages/ReviewsPage';
+import NotificationsPage from './pages/NotificationsPage';
 import { AuthProvider } from './contexts/AuthContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 
 function App() {
   return (
-    <AuthProvider>
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <AnimatePresence mode="wait">
-          <Routes>
+    <LanguageProvider>
+      <AuthProvider>
+        <div className="min-h-screen bg-gray-50">
+          <Navbar />
+          <AnimatePresence mode="wait">
+            <Routes>
             <Route 
               path="/" 
               element={
@@ -196,6 +199,19 @@ function App() {
               } 
             />
             <Route 
+              path="/notifications" 
+              element={
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <NotificationsPage />
+                </motion.div>
+              } 
+            />
+            <Route 
               path="/admin" 
               element={
                 <motion.div
@@ -209,10 +225,11 @@ function App() {
               } 
             />
           </Routes>
-        </AnimatePresence>
-        <Footer />
-      </div>
-    </AuthProvider>
+          </AnimatePresence>
+          <Footer />
+        </div>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 

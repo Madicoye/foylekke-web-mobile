@@ -20,6 +20,7 @@ import {
 import { adsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
+import PlaceManagement from '../components/admin/PlaceManagement';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -152,6 +153,7 @@ const AdminDashboard = () => {
               {[
                 { id: 'pending', label: 'Pending Ads', icon: Clock, count: pendingAds.length },
                 { id: 'all', label: 'All Ads', icon: BarChart3 },
+                { id: 'places', label: 'Places', icon: MousePointer },
                 { id: 'analytics', label: 'Analytics', icon: TrendingUp }
               ].map(tab => {
                 const Icon = tab.icon;
@@ -208,6 +210,10 @@ const AdminDashboard = () => {
                 getStatusColor={getStatusColor}
                 formatCurrency={formatCurrency}
               />
+            )}
+            
+            {activeTab === 'places' && (
+              <PlaceManagement />
             )}
             
             {activeTab === 'analytics' && (

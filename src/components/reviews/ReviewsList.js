@@ -2,10 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FunnelIcon,
-  ArrowUpDownIcon,
   StarIcon,
-  PhotoIcon,
-  CheckCircleIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
@@ -92,7 +89,11 @@ const ReviewsList = ({
   const ratingBreakdown = reviewsData?.ratingBreakdown || {};
 
   // Check if user already has a review for this place
-  const userHasReview = placeId && user && reviews.some(review => review.user._id === user._id);
+  const userHasReview = placeId && user && reviews.some(review => 
+    review.reviewType !== 'google' && 
+    review.source !== 'google_places' && 
+    review.user?._id === user._id
+  );
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -122,8 +123,6 @@ const ReviewsList = ({
 
   const RatingBreakdown = () => {
     if (!placeId || !ratingBreakdown || Object.keys(ratingBreakdown).length === 0) return null;
-
-    const maxCount = Math.max(...Object.values(ratingBreakdown));
 
     return (
       <div className="bg-gray-50 rounded-lg p-4 mb-6">
@@ -330,15 +329,15 @@ const ReviewsList = ({
           )}
         </div>
       ) : (
-        <div className="space-y-6">
-          {reviews.map((review) => (
+        <div className="space-y-4">
+          {reviews.filter(review => review && review._id).map((review) => (
             <ReviewCard
               key={review._id}
               review={review}
               onEdit={handleEditReview}
               onDelete={handleDeleteReview}
               showPlaceName={showPlaceNames}
-              compact={compact}
+              compact={true}
             />
           ))}
         </div>
