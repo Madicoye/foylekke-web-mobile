@@ -18,8 +18,10 @@ import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { notificationsAPI } from '../services/api';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
+import useTranslation from '../hooks/useTranslation';
 
 const NotificationsPage = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
@@ -80,7 +82,7 @@ const NotificationsPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries(['notifications']);
       queryClient.invalidateQueries(['notifications', 'unread-count']);
-      toast.success('All notifications marked as read');
+      toast.success(t('notifications.allMarkedAsRead'));
     }
   });
 
@@ -97,7 +99,7 @@ const NotificationsPage = () => {
   const updatePreferencesMutation = useMutation(notificationsAPI.updateNotificationPreferences, {
     onSuccess: () => {
       queryClient.invalidateQueries(['notification-preferences']);
-      toast.success('Preferences updated successfully');
+      toast.success(t('notifications.preferencesUpdated'));
     }
   });
 
@@ -111,7 +113,7 @@ const NotificationsPage = () => {
 
   const handleBulkAction = (action) => {
     if (selectedNotifications.length === 0) {
-      toast.error('Please select notifications first');
+      toast.error(t('notifications.selectNotificationsFirst'));
       return;
     }
 
@@ -120,7 +122,7 @@ const NotificationsPage = () => {
         selectedNotifications.forEach(id => markAsReadMutation.mutate(id));
         break;
       case 'delete':
-        if (window.confirm(`Delete ${selectedNotifications.length} notifications?`)) {
+        if (window.confirm(t('notifications.deleteConfirm', { count: selectedNotifications.length }))) {
           selectedNotifications.forEach(id => deleteNotificationMutation.mutate(id));
         }
         break;
@@ -156,10 +158,10 @@ const NotificationsPage = () => {
     const notificationTime = new Date(timestamp);
     const diffInSeconds = Math.floor((now - notificationTime) / 1000);
 
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    if (diffInSeconds < 60) return t('notifications.justNow');
+    if (diffInSeconds < 3600) return t('notifications.minutesAgo', { minutes: Math.floor(diffInSeconds / 60) });
+    if (diffInSeconds < 86400) return t('notifications.hoursAgo', { hours: Math.floor(diffInSeconds / 3600) });
+    if (diffInSeconds < 604800) return t('notifications.daysAgo', { days: Math.floor(diffInSeconds / 86400) });
     return notificationTime.toLocaleDateString();
   };
 
@@ -215,7 +217,7 @@ const NotificationsPage = () => {
               onClick={() => setShowPreferences(false)}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               onClick={() => {
@@ -224,7 +226,7 @@ const NotificationsPage = () => {
               }}
               className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
             >
-              Save Preferences
+              {t('notifications.managePreferences')}
             </button>
           </div>
         </div>
@@ -236,8 +238,8 @@ const NotificationsPage = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Please Log In</h2>
-          <p className="text-gray-600">You need to be logged in to view notifications.</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('auth.pleaseLogin')}</h2>
+          <p className="text-gray-600">{t('auth.loginRequired')}</p>
         </div>
       </div>
     );
@@ -256,9 +258,9 @@ const NotificationsPage = () => {
             <div className="flex items-center space-x-3">
               <BellSolidIcon className="h-8 w-8 text-primary-600" />
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
+                <h1 className="text-3xl font-bold text-gray-900">{t('notifications.title')}</h1>
                 <p className="text-gray-600 mt-1">
-                  Stay updated with your latest activities and updates
+                  {t('notifications.noNotificationsMessage')}
                 </p>
               </div>
             </div>
@@ -269,14 +271,14 @@ const NotificationsPage = () => {
                 className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
               >
                 <CheckIcon className="h-4 w-4 mr-2" />
-                Mark All Read
+                {t('notifications.markAllAsRead')}
               </button>
               <button
                 onClick={() => setShowPreferences(true)}
                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700"
               >
                 <CogIcon className="h-4 w-4 mr-2" />
-                Preferences
+                {t('notifications.settings')}
               </button>
             </div>
           </motion.div>
@@ -298,7 +300,7 @@ const NotificationsPage = () => {
               <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search notifications..."
+                placeholder={t('notifications.searchPlaceholder')}
                 value={filters.search}
                 onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
                 className="pl-10 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -311,7 +313,7 @@ const NotificationsPage = () => {
               onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
               className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             >
-              <option value="all">All Types</option>
+              <option value="all">{t('notifications.allTypes')}</option>
               {notificationTypes.map(type => (
                 <option key={type.id} value={type.id}>{type.name}</option>
               ))}
@@ -323,9 +325,9 @@ const NotificationsPage = () => {
               onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
               className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             >
-              <option value="all">All Status</option>
-              <option value="unread">Unread</option>
-              <option value="read">Read</option>
+              <option value="all">{t('notifications.allStatuses')}</option>
+              <option value="unread">{t('notifications.unread')}</option>
+              <option value="read">{t('notifications.read')}</option>
             </select>
 
             {/* Clear Filters */}
@@ -333,7 +335,7 @@ const NotificationsPage = () => {
               onClick={() => setFilters({ type: 'all', status: 'all', search: '' })}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
             >
-              Clear Filters
+              {t('notifications.clearAll')}
             </button>
           </div>
 
@@ -341,20 +343,20 @@ const NotificationsPage = () => {
           {selectedNotifications.length > 0 && (
             <div className="mt-4 flex items-center justify-between p-3 bg-blue-50 rounded-lg">
               <span className="text-sm text-blue-800">
-                {selectedNotifications.length} notification{selectedNotifications.length !== 1 ? 's' : ''} selected
+                {selectedNotifications.length} {selectedNotifications.length === 1 ? t('notifications.title').slice(0, -1) : t('notifications.title').toLowerCase()} selected
               </span>
               <div className="flex space-x-2">
                 <button
                   onClick={() => handleBulkAction('markRead')}
                   className="px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded hover:bg-green-200"
                 >
-                  Mark Read
+                  {t('notifications.bulkMarkAsRead')}
                 </button>
                 <button
                   onClick={() => handleBulkAction('delete')}
                   className="px-3 py-1 text-xs font-medium text-red-700 bg-red-100 rounded hover:bg-red-200"
                 >
-                  Delete
+                  {t('notifications.bulkDelete')}
                 </button>
               </div>
             </div>
@@ -371,22 +373,22 @@ const NotificationsPage = () => {
           {isLoading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
-              <p className="mt-2 text-gray-600">Loading notifications...</p>
+              <p className="mt-2 text-gray-600">{t('common.loading')}</p>
             </div>
           ) : error ? (
             <div className="p-8 text-center">
               <ExclamationTriangleIcon className="h-12 w-12 text-red-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to load notifications</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">{t('notifications.noNotificationsTitle')}</h3>
               <p className="text-gray-600">{error.message}</p>
             </div>
           ) : notifications.length === 0 ? (
             <div className="p-8 text-center">
               <BellIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No notifications found</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">{t('notifications.noNotificationsTitle')}</h3>
               <p className="text-gray-600">
                 {filters.search || filters.type !== 'all' || filters.status !== 'all'
-                  ? 'Try adjusting your filters'
-                  : 'You\'re all caught up! New notifications will appear here.'}
+                  ? t('notifications.noFilteredNotifications')
+                  : t('notifications.noNotificationsMessage')}
               </p>
             </div>
           ) : (
@@ -407,7 +409,7 @@ const NotificationsPage = () => {
                     }}
                   />
                   <span className="ml-3 text-sm font-medium text-gray-700">
-                    Select All ({notifications.length})
+                    {t('notifications.selectAll')} ({notifications.length})
                   </span>
                 </label>
               </div>
@@ -467,7 +469,7 @@ const NotificationsPage = () => {
                               <button
                                 onClick={() => handleMarkAsRead(notification._id)}
                                 className="p-1.5 text-blue-600 hover:text-blue-700 rounded-full hover:bg-blue-100"
-                                title="Mark as read"
+                                title={t('notifications.markAsReadTooltip')}
                               >
                                 <EyeIcon className="h-4 w-4" />
                               </button>
@@ -479,7 +481,7 @@ const NotificationsPage = () => {
                             <button
                               onClick={() => handleDeleteNotification(notification._id)}
                               className="p-1.5 text-red-600 hover:text-red-700 rounded-full hover:bg-red-100"
-                              title="Delete"
+                              title={t('notifications.deleteTooltip')}
                             >
                               <TrashIcon className="h-4 w-4" />
                             </button>
@@ -498,7 +500,7 @@ const NotificationsPage = () => {
             <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-700">
-                  Showing {(page - 1) * limit + 1} to {Math.min(page * limit, totalNotifications)} of {totalNotifications} notifications
+                  {t('notifications.showingResults', { start: (page - 1) * limit + 1, end: Math.min(page * limit, totalNotifications), total: totalNotifications })}
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
@@ -506,17 +508,17 @@ const NotificationsPage = () => {
                     disabled={page === 1}
                     className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Previous
+                    {t('common.previous')}
                   </button>
                   <span className="text-sm text-gray-700">
-                    Page {page} of {totalPages}
+                    {t('notifications.pageInfo', { page, total: totalPages })}
                   </span>
                   <button
                     onClick={() => setPage(page + 1)}
                     disabled={page === totalPages}
                     className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Next
+                    {t('common.next')}
                   </button>
                 </div>
               </div>

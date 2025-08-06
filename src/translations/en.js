@@ -323,6 +323,10 @@ export const en = {
     // Auth buttons
     login: 'Login',
     signUp: 'Sign Up',
+    
+    // App functionality
+    search: 'Search',
+    appSettings: 'App Settings',
   },
 
   // Footer
@@ -425,6 +429,36 @@ export const en = {
     tryAdjustingFilters: 'Try adjusting your search or filters to find more hangouts.',
     createFirstHangout: 'Create your first hangout to get started!',
     beFirstToCreate: 'Be the first to create a hangout in your area!',
+    
+    // Chat features
+    chat: {
+      // Header
+      title: 'Hangout Chat',
+      messages: 'message',
+      messages_plural: 'messages',
+      minimize: 'Minimize',
+      expand: 'Expand',
+      
+      // Message states
+      typing: 'Someone is typing...',
+      messageSent: 'Message sent',
+      failedToSend: 'Failed to send message',
+      
+      // Input
+      inputPlaceholder: 'Type a message...',
+      attachFile: 'Attach file',
+      addEmoji: 'Add emoji',
+      sendMessage: 'Send message',
+      charactersCount: 'characters',
+      
+      // File upload
+      fileUploadNotImplemented: 'File upload not implemented in demo',
+      emojiPickerNotImplemented: 'Emoji picker not implemented in demo',
+      
+      // Time formatting
+      today: 'Today',
+      yesterday: 'Yesterday',
+    },
     
     // HangoutCard specific
     today: 'Today',
@@ -587,6 +621,353 @@ export const en = {
     locationRequired: 'At least one location is required',
   },
 
+  // Restaurant Dashboard
+  restaurant: {
+    // Page titles and navigation
+    dashboard: 'Dashboard',
+    menuManagement: 'Menu Management',
+    analytics: 'Analytics',
+    hangouts: 'Hangouts',
+    subscription: 'Subscription',
+    
+    // Error states
+    noRestaurantsFound: 'No Restaurants Found',
+    noRestaurantsMessage: 'Your account is not associated with any restaurants. Please contact support to set up your restaurant profile.',
+    contactSupport: 'Contact Support',
+    
+    // Dashboard metrics
+    totalViews: 'Total Views',
+    averageRating: 'Average Rating',
+    reviews: 'reviews',
+    activeHangouts: 'Active Hangouts',
+    participants: 'participants',
+    menuItems: 'Menu Items',
+    menuActive: 'Menu Active',
+    menuInactive: 'Menu Inactive',
+    
+    // Charts and sections
+    popularDishes: 'Popular Dishes',
+    views: 'views',
+    orders: 'orders',
+    recentActivity: 'Recent Activity',
+    upcomingHangouts: 'Upcoming Hangouts',
+    noRecentActivity: 'No recent activity',
+    noUpcomingHangouts: 'No upcoming hangouts',
+    
+    // Activity types
+    newReview: 'New Review',
+    newBooking: 'New Booking',
+    menuUpdate: 'Menu Update',
+    hangoutCreated: 'Hangout Created',
+    
+    // Time indicators
+    minutesAgo: '{minutes} minutes ago',
+    hoursAgo: '{hours} hours ago',
+    daysAgo: '{days} days ago',
+    
+    // Menu management
+    addMenuItem: 'Add Menu Item',
+    editMenuItem: 'Edit Menu Item',
+    deleteMenuItem: 'Delete Menu Item',
+    menuCategories: 'Menu Categories',
+    itemName: 'Item Name',
+    description: 'Description',
+    price: 'Price',
+    category: 'Category',
+    availability: 'Availability',
+    available: 'Available',
+    unavailable: 'Unavailable',
+    
+    // Analytics
+    viewsGrowth: 'Views Growth',
+    ordersGrowth: 'Orders Growth',
+    ratingTrend: 'Rating Trend',
+    peakHours: 'Peak Hours',
+    topDishes: 'Top Dishes',
+    
+    // Subscription
+    currentPlan: 'Current Plan',
+    billingCycle: 'Billing Cycle',
+    nextBilling: 'Next Billing',
+    upgradeplan: 'Upgrade Plan',
+    manageBilling: 'Manage Billing',
+  },
+
+  // Admin Dashboard
+  admin: {
+    // Page titles and navigation
+    dashboard: 'Admin Dashboard',
+    adminDashboard: 'Admin Dashboard',
+    managePlatform: 'Manage advertisements and monitor platform performance',
+    
+    // Access control
+    accessDenied: 'Access Denied',
+    adminPrivilegesRequired: 'You need admin privileges to access this page.',
+    
+    // Navigation tabs
+    pendingAds: 'Pending Ads',
+    allAds: 'All Ads',
+    places: 'Places',
+    analytics: 'Analytics',
+    
+    // Ad management
+    approveAd: 'Approve',
+    rejectAd: 'Reject',
+    reviewNotes: 'Review Notes',
+    provideReviewNotes: 'Please provide review notes',
+    adApprovedSuccess: 'Ad approved successfully',
+    adRejectedSuccess: 'Ad rejected successfully',
+    failedToApprove: 'Failed to approve ad',
+    failedToReject: 'Failed to reject ad',
+    
+    // Ad status
+    active: 'Active',
+    pending: 'Pending',
+    rejected: 'Rejected',
+    paused: 'Paused',
+    allStatus: 'All Status',
+    
+    // Search and filters
+    searchAds: 'Search ads...',
+    filterByStatus: 'Filter by status',
+    
+    // Table headers
+    ad: 'Ad',
+    advertiser: 'Advertiser',
+    budget: 'Budget',
+    performance: 'Performance',
+    status: 'Status',
+    created: 'Created',
+    
+    // Analytics metrics
+    totalAds: 'Total Ads',
+    pendingCount: 'Pending',
+    activeCount: 'Active',
+    totalRevenue: 'Total Revenue',
+    revenueMetrics: 'Revenue Metrics',
+    averageRevenuePerAd: 'Average Revenue per Ad',
+    totalImpressions: 'Total Impressions',
+    totalClicks: 'Total Clicks',
+    topAdvertisers: 'Top Advertisers',
+    
+    // Performance indicators
+    impressions: 'Impressions',
+    clicks: 'Clicks',
+    adsCount: 'ads',
+    
+    // General
+    noData: 'No data available',
+    loading: 'Loading...',
+    
+    // Ad details
+    title: 'Title',
+    description: 'Description',
+    targetAudience: 'Target Audience',
+    campaignDuration: 'Campaign Duration',
+    approveQuestion: 'Approve this ad?',
+    rejectQuestion: 'Reject this ad?',
+    
+    // Validation
+    reviewNotesRequired: 'Review notes are required',
+    
+    // Place management
+    placeManagement: 'Place Management',
+    managePlaces: 'Manage places and establishments',
+  },
+
+  // Reviews Section
+  reviews: {
+    // General
+    title: 'Reviews',
+    noReviews: 'No reviews yet',
+    writeReview: 'Write Review',
+    editReview: 'Edit Review',
+    deleteReview: 'Delete Review',
+    
+    // Toast messages
+    reviewDeletedSuccess: 'Review deleted successfully',
+    failedToDelete: 'Failed to delete review',
+    failedToLike: 'Failed to like review',
+    reviewFlagged: 'Review flagged',
+    failedToFlag: 'Failed to flag review',
+    
+    // Confirmation dialogs
+    confirmDeleteReview: 'Are you sure you want to delete this review? This action cannot be undone.',
+    
+    // Review states
+    reviewDataNotAvailable: 'Review data not available',
+    anonymousUser: 'Anonymous User',
+    verifiedPurchase: 'Verified Purchase',
+    
+    // Rating and breakdown
+    ratingBreakdown: 'Rating Breakdown',
+    averageRating: 'Average Rating',
+    totalReviews: 'Total Reviews',
+    
+    // Filters
+    filters: 'Filters',
+    sortBy: 'Sort by',
+    newest: 'Newest',
+    oldest: 'Oldest',
+    highest: 'Highest Rated',
+    lowest: 'Lowest Rated',
+    helpful: 'Most Helpful',
+    withPhotos: 'With Photos',
+    verifiedOnly: 'Verified Only',
+    allRatings: 'All Ratings',
+    stars: 'stars',
+    
+    // Review form
+    writeReviewFor: 'Write a review for',
+    rating: 'Rating',
+    reviewTitle: 'Review Title',
+    reviewTitlePlaceholder: 'Summarize your experience',
+    reviewText: 'Your Review',
+    reviewTextPlaceholder: 'Share your experience in detail...',
+    addPhotos: 'Add Photos',
+    submitReview: 'Submit Review',
+    updating: 'Updating...',
+    posting: 'Posting...',
+    cancel: 'Cancel',
+    
+    // Review actions
+    helpful: 'Helpful',
+    notHelpful: 'Not Helpful',
+    reply: 'Reply',
+    report: 'Report',
+    edit: 'Edit',
+    delete: 'Delete',
+    
+    // Review meta
+    reviewBy: 'Review by',
+    postedOn: 'Posted on',
+    updated: 'Updated',
+    googleReview: 'Google Review',
+    localReview: 'Local Review',
+    
+    // Pagination
+    loadMore: 'Load More',
+    showingResults: 'Showing {start}-{end} of {total} reviews',
+    
+    // Empty states
+    noReviewsYet: 'No reviews yet',
+    noReviewsMessage: 'Be the first to leave a review for this place!',
+    noFilteredReviews: 'No reviews match your criteria',
+    
+    // Business response
+    businessResponse: 'Business Response',
+    respondToReview: 'Respond to this Review',
+    
+    // Validation
+    ratingRequired: 'Please select a rating',
+    titleRequired: 'Title is required',
+    textRequired: 'Review text is required',
+    
+    // Photo gallery
+    viewPhotos: 'View Photos',
+    photoCount: '{count} photo',
+    photosCount: '{count} photos',
+  },
+
+  // Common UI elements
+  common: {
+    previous: 'Previous',
+    next: 'Next',
+    loading: 'Loading...',
+    save: 'Save',
+    cancel: 'Cancel',
+    edit: 'Edit',
+    delete: 'Delete',
+    confirm: 'Confirm',
+    close: 'Close',
+  },
+
+  // Notifications
+  notifications: {
+    // General
+    title: 'Notifications',
+    noNotifications: 'No notifications',
+    notificationPreferences: 'Notification Preferences',
+    
+    // Actions
+    markAsRead: 'Mark as read',
+    markAllAsRead: 'Mark all as read',
+    delete: 'Delete',
+    deleteSelected: 'Delete selected',
+    selectAll: 'Select all',
+    clearAll: 'Clear all',
+    
+    // Filters
+    allNotifications: 'All Notifications',
+    unreadOnly: 'Unread only',
+    readOnly: 'Read only',
+    searchPlaceholder: 'Search notifications...',
+    filterByType: 'Filter by type',
+    filterByStatus: 'Filter by status',
+    allTypes: 'All Types',
+    allStatuses: 'All Statuses',
+    
+    // Status
+    read: 'Read',
+    unread: 'Unread',
+    new: 'New',
+    
+    // Types
+    hangoutInvite: 'Hangout Invite',
+    hangoutUpdate: 'Hangout Update',
+    placeReview: 'Place Review',
+    placeUpdate: 'Place Update',
+    like: 'Like',
+    favorite: 'Favorite',
+    comment: 'Comment',
+    message: 'Message',
+    system: 'System',
+    
+    // Bulk actions
+    selectNotificationsFirst: 'Please select notifications first',
+    deleteConfirm: 'Delete {count} notifications?',
+    bulkMarkAsRead: 'Mark as read',
+    bulkDelete: 'Delete',
+    
+    // Toast messages
+    allMarkedAsRead: 'All notifications marked as read',
+    preferencesUpdated: 'Preferences updated successfully',
+    notificationDeleted: 'Notification deleted',
+    
+    // Time formatting
+    justNow: 'Just now',
+    minutesAgo: '{minutes}m ago',
+    hoursAgo: '{hours}h ago',
+    daysAgo: '{days}d ago',
+    
+    // Preferences
+    email: 'Email',
+    push: 'Push',
+    inApp: 'In-App',
+    enableEmail: 'Enable email',
+    enablePush: 'Enable push',
+    enableInApp: 'Enable in-app',
+    
+    // Pagination
+    showingResults: 'Showing {start} to {end} of {total} notifications',
+    pageInfo: 'Page {page} of {total}',
+    
+    // Empty states
+    noNotificationsTitle: 'No notifications',
+    noNotificationsMessage: 'You have no notifications at the moment.',
+    noFilteredNotifications: 'No notifications match your criteria.',
+    
+    // Tooltips
+    markAsReadTooltip: 'Mark as read',
+    deleteTooltip: 'Delete',
+    settingsTooltip: 'Notification settings',
+    
+    // Settings
+    settings: 'Settings',
+    managePreferences: 'Manage Preferences',
+    notificationSettings: 'Notification Settings',
+  },
+
   // Authentication
   auth: {
     // Page titles
@@ -665,46 +1046,6 @@ export const en = {
     passwordsDoNotMatch: 'Passwords do not match'
   },
 
-  // Hangouts
-  hangouts: {
-    title: 'Hangouts',
-    createHangout: 'Create Hangout',
-    joinHangout: 'Join',
-    leaveHangout: 'Leave',
-    myHangouts: 'My Hangouts',
-    upcomingHangouts: 'Upcoming Hangouts',
-    pastHangouts: 'Past Hangouts',
-    participants: 'Participants',
-    organizer: 'Organizer',
-    location: 'Location',
-    datetime: 'Date & Time',
-    description: 'Description',
-    category: 'Category',
-    public: 'Public',
-    private: 'Private',
-    requiresApproval: 'Requires Approval',
-    maxParticipants: 'Max Participants',
-    
-    // Create hangout
-    basicInformation: 'Basic Information',
-    hangoutTitle: 'Hangout Title',
-    hangoutDescription: 'Description',
-    selectDate: 'Select Date',
-    selectTime: 'Select Time',
-    duration: 'Duration',
-    hours: 'hours',
-    
-    // Categories
-    foodDining: 'Food & Dining',
-    social: 'Social',
-    outdoor: 'Outdoor',
-    entertainment: 'Entertainment',
-    sports: 'Sports',
-    cultural: 'Cultural',
-    shopping: 'Shopping',
-    other: 'Other'
-  },
-
   // Forms
   forms: {
     required: 'Required',
@@ -745,5 +1086,3 @@ export const en = {
     contactSupport: 'Contact support'
   }
 };
-
-export default en;

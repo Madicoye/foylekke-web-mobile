@@ -323,6 +323,10 @@ export const fr = {
     // Auth buttons
     login: 'Connexion',
     signUp: 'S\'inscrire',
+    
+    // App functionality
+    search: 'Rechercher',
+    appSettings: 'Paramètres de l\'App',
   },
 
   // Footer
@@ -425,6 +429,36 @@ export const fr = {
     tryAdjustingFilters: 'Essayez d\'ajuster votre recherche ou vos filtres pour trouver plus de sorties.',
     createFirstHangout: 'Créez votre première sortie pour commencer !',
     beFirstToCreate: 'Soyez le premier à créer une sortie dans votre région !',
+    
+    // Chat features
+    chat: {
+      // Header
+      title: 'Chat de Sortie',
+      messages: 'message',
+      messages_plural: 'messages',
+      minimize: 'Réduire',
+      expand: 'Agrandir',
+      
+      // Message states
+      typing: 'Quelqu\'un écrit...',
+      messageSent: 'Message envoyé',
+      failedToSend: 'Échec de l\'envoi du message',
+      
+      // Input
+      inputPlaceholder: 'Écrivez un message...',
+      attachFile: 'Joindre un fichier',
+      addEmoji: 'Ajouter un emoji',
+      sendMessage: 'Envoyer le message',
+      charactersCount: 'caractères',
+      
+      // File upload
+      fileUploadNotImplemented: 'L\'envoi de fichiers n\'est pas implémenté dans la démo',
+      emojiPickerNotImplemented: 'Le sélecteur d\'emoji n\'est pas implémenté dans la démo',
+      
+      // Time formatting
+      today: 'Aujourd\'hui',
+      yesterday: 'Hier',
+    },
     
     // HangoutCard specific
     today: 'Aujourd\'hui',
@@ -587,6 +621,353 @@ export const fr = {
     locationRequired: 'Au moins un lieu est requis',
   },
 
+  // Restaurant Dashboard
+  restaurant: {
+    // Page titles and navigation
+    dashboard: 'Tableau de Bord',
+    menuManagement: 'Gestion du Menu',
+    analytics: 'Analyses',
+    hangouts: 'Sorties',
+    subscription: 'Abonnement',
+    
+    // Error states
+    noRestaurantsFound: 'Aucun Restaurant Trouvé',
+    noRestaurantsMessage: 'Votre compte n\'est associé à aucun restaurant. Veuillez contacter le support pour configurer votre profil de restaurant.',
+    contactSupport: 'Contacter le Support',
+    
+    // Dashboard metrics
+    totalViews: 'Vues Totales',
+    averageRating: 'Note Moyenne',
+    reviews: 'avis',
+    activeHangouts: 'Sorties Actives',
+    participants: 'participants',
+    menuItems: 'Articles du Menu',
+    menuActive: 'Menu Actif',
+    menuInactive: 'Menu Inactif',
+    
+    // Charts and sections
+    popularDishes: 'Plats Populaires',
+    views: 'vues',
+    orders: 'commandes',
+    recentActivity: 'Activité Récente',
+    upcomingHangouts: 'Sorties Prochaines',
+    noRecentActivity: 'Aucune activité récente',
+    noUpcomingHangouts: 'Aucune sortie prochaine',
+    
+    // Activity types
+    newReview: 'Nouvel Avis',
+    newBooking: 'Nouvelle Réservation',
+    menuUpdate: 'Mise à Jour du Menu',
+    hangoutCreated: 'Sortie Créée',
+    
+    // Time indicators
+    minutesAgo: 'il y a {minutes} minutes',
+    hoursAgo: 'il y a {hours} heures',
+    daysAgo: 'il y a {days} jours',
+    
+    // Menu management
+    addMenuItem: 'Ajouter un Article',
+    editMenuItem: 'Modifier l\'Article',
+    deleteMenuItem: 'Supprimer l\'Article',
+    menuCategories: 'Catégories du Menu',
+    itemName: 'Nom de l\'Article',
+    description: 'Description',
+    price: 'Prix',
+    category: 'Catégorie',
+    availability: 'Disponibilité',
+    available: 'Disponible',
+    unavailable: 'Indisponible',
+    
+    // Analytics
+    viewsGrowth: 'Croissance des Vues',
+    ordersGrowth: 'Croissance des Commandes',
+    ratingTrend: 'Tendance des Notes',
+    peakHours: 'Heures de Pointe',
+    topDishes: 'Plats les Plus Populaires',
+    
+    // Subscription
+    currentPlan: 'Plan Actuel',
+    billingCycle: 'Cycle de Facturation',
+    nextBilling: 'Prochaine Facturation',
+    upgradeplan: 'Améliorer le Plan',
+    manageBilling: 'Gérer la Facturation',
+  },
+
+  // Admin Dashboard
+  admin: {
+    // Page titles and navigation
+    dashboard: 'Tableau de Bord Admin',
+    adminDashboard: 'Tableau de Bord Admin',
+    managePlatform: 'Gérer les publicités et surveiller les performances de la plateforme',
+    
+    // Access control
+    accessDenied: 'Accès Refusé',
+    adminPrivilegesRequired: 'Vous avez besoin de privilèges administrateur pour accéder à cette page.',
+    
+    // Navigation tabs
+    pendingAds: 'Publicités en Attente',
+    allAds: 'Toutes les Publicités',
+    places: 'Lieux',
+    analytics: 'Analyses',
+    
+    // Ad management
+    approveAd: 'Approuver',
+    rejectAd: 'Rejeter',
+    reviewNotes: 'Notes de Révision',
+    provideReviewNotes: 'Veuillez fournir des notes de révision',
+    adApprovedSuccess: 'Publicité approuvée avec succès',
+    adRejectedSuccess: 'Publicité rejetée avec succès',
+    failedToApprove: 'Échec de l\'approbation de la publicité',
+    failedToReject: 'Échec du rejet de la publicité',
+    
+    // Ad status
+    active: 'Active',
+    pending: 'En Attente',
+    rejected: 'Rejetée',
+    paused: 'En Pause',
+    allStatus: 'Tous les Statuts',
+    
+    // Search and filters
+    searchAds: 'Rechercher des publicités...',
+    filterByStatus: 'Filtrer par statut',
+    
+    // Table headers
+    ad: 'Publicité',
+    advertiser: 'Annonceur',
+    budget: 'Budget',
+    performance: 'Performance',
+    status: 'Statut',
+    created: 'Créé',
+    
+    // Analytics metrics
+    totalAds: 'Total des Publicités',
+    pendingCount: 'En Attente',
+    activeCount: 'Actives',
+    totalRevenue: 'Chiffre d\'Affaires Total',
+    revenueMetrics: 'Métriques de Revenus',
+    averageRevenuePerAd: 'Chiffre d\'Affaires Moyen par Publicité',
+    totalImpressions: 'Total des Impressions',
+    totalClicks: 'Total des Clics',
+    topAdvertisers: 'Meilleurs Annonceurs',
+    
+    // Performance indicators
+    impressions: 'Impressions',
+    clicks: 'Clics',
+    adsCount: 'publicités',
+    
+    // General
+    noData: 'Aucune donnée disponible',
+    loading: 'Chargement...',
+    
+    // Ad details
+    title: 'Titre',
+    description: 'Description',
+    targetAudience: 'Public Cible',
+    campaignDuration: 'Durée de la Campagne',
+    approveQuestion: 'Approuver cette publicité ?',
+    rejectQuestion: 'Rejeter cette publicité ?',
+    
+    // Validation
+    reviewNotesRequired: 'Les notes de révision sont requises',
+    
+    // Place management
+    placeManagement: 'Gestion des Lieux',
+    managePlaces: 'Gérer les lieux et établissements',
+  },
+
+  // Reviews Section
+  reviews: {
+    // General
+    title: 'Avis',
+    noReviews: 'Aucun avis pour le moment',
+    writeReview: 'Écrire un Avis',
+    editReview: 'Modifier l\'Avis',
+    deleteReview: 'Supprimer l\'Avis',
+    
+    // Toast messages
+    reviewDeletedSuccess: 'Avis supprimé avec succès',
+    failedToDelete: 'Échec de la suppression de l\'avis',
+    failedToLike: 'Échec du like de l\'avis',
+    reviewFlagged: 'Avis signalé',
+    failedToFlag: 'Échec du signalement de l\'avis',
+    
+    // Confirmation dialogs
+    confirmDeleteReview: 'Êtes-vous sûr de vouloir supprimer cet avis ? Cette action ne peut pas être annulée.',
+    
+    // Review states
+    reviewDataNotAvailable: 'Données d\'avis non disponibles',
+    anonymousUser: 'Utilisateur Anonyme',
+    verifiedPurchase: 'Achat Vérifié',
+    
+    // Rating and breakdown
+    ratingBreakdown: 'Répartition des Notes',
+    averageRating: 'Note Moyenne',
+    totalReviews: 'Total des Avis',
+    
+    // Filters
+    filters: 'Filtres',
+    sortBy: 'Trier par',
+    newest: 'Plus Récents',
+    oldest: 'Plus Anciens',
+    highest: 'Note la Plus Élevée',
+    lowest: 'Note la Plus Basse',
+    helpful: 'Plus Utiles',
+    withPhotos: 'Avec Photos',
+    verifiedOnly: 'Vérifiés Uniquement',
+    allRatings: 'Toutes les Notes',
+    stars: 'étoiles',
+    
+    // Review form
+    writeReviewFor: 'Écrire un avis pour',
+    rating: 'Note',
+    reviewTitle: 'Titre de l\'Avis',
+    reviewTitlePlaceholder: 'Résumez votre expérience',
+    reviewText: 'Votre Avis',
+    reviewTextPlaceholder: 'Partagez votre expérience en détail...',
+    addPhotos: 'Ajouter des Photos',
+    submitReview: 'Publier l\'Avis',
+    updating: 'Mise à jour...',
+    posting: 'Publication...',
+    cancel: 'Annuler',
+    
+    // Review actions
+    helpful: 'Utile',
+    notHelpful: 'Pas Utile',
+    reply: 'Répondre',
+    report: 'Signaler',
+    edit: 'Modifier',
+    delete: 'Supprimer',
+    
+    // Review meta
+    reviewBy: 'Avis par',
+    postedOn: 'Publié le',
+    updated: 'Modifié',
+    googleReview: 'Avis Google',
+    localReview: 'Avis Local',
+    
+    // Pagination
+    loadMore: 'Charger Plus',
+    showingResults: 'Affichage de {start}-{end} sur {total} avis',
+    
+    // Empty states
+    noReviewsYet: 'Aucun avis pour le moment',
+    noReviewsMessage: 'Soyez le premier à laisser un avis pour ce lieu !',
+    noFilteredReviews: 'Aucun avis ne correspond à vos critères',
+    
+    // Business response
+    businessResponse: 'Réponse de l\'Établissement',
+    respondToReview: 'Répondre à cet Avis',
+    
+    // Validation
+    ratingRequired: 'Veuillez sélectionner une note',
+    titleRequired: 'Le titre est requis',
+    textRequired: 'Le texte de l\'avis est requis',
+    
+    // Photo gallery
+    viewPhotos: 'Voir les Photos',
+    photoCount: '{count} photo',
+    photosCount: '{count} photos',
+  },
+
+  // Common UI elements
+  common: {
+    previous: 'Précédent',
+    next: 'Suivant',
+    loading: 'Chargement...',
+    save: 'Enregistrer',
+    cancel: 'Annuler',
+    edit: 'Modifier',
+    delete: 'Supprimer',
+    confirm: 'Confirmer',
+    close: 'Fermer',
+  },
+
+  // Notifications
+  notifications: {
+    // General
+    title: 'Notifications',
+    noNotifications: 'Aucune notification',
+    notificationPreferences: 'Préférences de Notification',
+    
+    // Actions
+    markAsRead: 'Marquer comme lu',
+    markAllAsRead: 'Tout marquer comme lu',
+    delete: 'Supprimer',
+    deleteSelected: 'Supprimer sélectionnées',
+    selectAll: 'Tout sélectionner',
+    clearAll: 'Tout effacer',
+    
+    // Filters
+    allNotifications: 'Toutes les Notifications',
+    unreadOnly: 'Non lues uniquement',
+    readOnly: 'Lues uniquement',
+    searchPlaceholder: 'Rechercher dans les notifications...',
+    filterByType: 'Filtrer par type',
+    filterByStatus: 'Filtrer par statut',
+    allTypes: 'Tous les Types',
+    allStatuses: 'Tous les Statuts',
+    
+    // Status
+    read: 'Lu',
+    unread: 'Non lu',
+    new: 'Nouveau',
+    
+    // Types
+    hangoutInvite: 'Invitation à une Sortie',
+    hangoutUpdate: 'Mise à Jour de Sortie',
+    placeReview: 'Avis sur un Lieu',
+    placeUpdate: 'Mise à Jour de Lieu',
+    like: 'J\'aime',
+    favorite: 'Favori',
+    comment: 'Commentaire',
+    message: 'Message',
+    system: 'Système',
+    
+    // Bulk actions
+    selectNotificationsFirst: 'Veuillez d\'abord sélectionner des notifications',
+    deleteConfirm: 'Supprimer {count} notifications ?',
+    bulkMarkAsRead: 'Marquer comme lues',
+    bulkDelete: 'Supprimer',
+    
+    // Toast messages
+    allMarkedAsRead: 'Toutes les notifications marquées comme lues',
+    preferencesUpdated: 'Préférences mises à jour avec succès',
+    notificationDeleted: 'Notification supprimée',
+    
+    // Time formatting
+    justNow: 'À l\'instant',
+    minutesAgo: '{minutes}min',
+    hoursAgo: '{hours}h',
+    daysAgo: '{days}j',
+    
+    // Preferences
+    email: 'Email',
+    push: 'Push',
+    inApp: 'Dans l\'App',
+    enableEmail: 'Activer les emails',
+    enablePush: 'Activer les push',
+    enableInApp: 'Activer dans l\'app',
+    
+    // Pagination
+    showingResults: 'Affichage de {start} à {end} sur {total} notifications',
+    pageInfo: 'Page {page} sur {total}',
+    
+    // Empty states
+    noNotificationsTitle: 'Aucune notification',
+    noNotificationsMessage: 'Vous n\'avez aucune notification pour le moment.',
+    noFilteredNotifications: 'Aucune notification ne correspond à vos critères.',
+    
+    // Tooltips
+    markAsReadTooltip: 'Marquer comme lu',
+    deleteTooltip: 'Supprimer',
+    settingsTooltip: 'Paramètres de notification',
+    
+    // Settings
+    settings: 'Paramètres',
+    managePreferences: 'Gérer les Préférences',
+    notificationSettings: 'Paramètres de Notification',
+  },
+
   // Authentication
   auth: {
     // Page titles
@@ -665,46 +1046,6 @@ export const fr = {
     passwordsDoNotMatch: 'Les mots de passe ne correspondent pas'
   },
 
-  // Hangouts
-  hangouts: {
-    title: 'Sorties',
-    createHangout: 'Créer une Sortie',
-    joinHangout: 'Rejoindre',
-    leaveHangout: 'Quitter',
-    myHangouts: 'Mes Sorties',
-    upcomingHangouts: 'Sorties à Venir',
-    pastHangouts: 'Sorties Passées',
-    participants: 'Participants',
-    organizer: 'Organisateur',
-    location: 'Lieu',
-    datetime: 'Date et Heure',
-    description: 'Description',
-    category: 'Catégorie',
-    public: 'Public',
-    private: 'Privé',
-    requiresApproval: 'Nécessite une approbation',
-    maxParticipants: 'Maximum de participants',
-    
-    // Create hangout
-    basicInformation: 'Informations de Base',
-    hangoutTitle: 'Titre de la Sortie',
-    hangoutDescription: 'Description',
-    selectDate: 'Sélectionner une date',
-    selectTime: 'Sélectionner une heure',
-    duration: 'Durée',
-    hours: 'heures',
-    
-    // Categories
-    foodDining: 'Nourriture & Restaurants',
-    social: 'Social',
-    outdoor: 'Extérieur',
-    entertainment: 'Divertissement',
-    sports: 'Sports',
-    cultural: 'Culturel',
-    shopping: 'Shopping',
-    other: 'Autre'
-  },
-
   // Forms
   forms: {
     required: 'Requis',
@@ -745,5 +1086,3 @@ export const fr = {
     contactSupport: 'Contacter le support'
   }
 };
-
-export default fr;

@@ -21,8 +21,10 @@ import { adsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import PlaceManagement from '../components/admin/PlaceManagement';
+import useTranslation from '../hooks/useTranslation';
 
 const AdminDashboard = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('pending');
@@ -60,12 +62,12 @@ const AdminDashboard = () => {
         queryClient.invalidateQueries('admin-pending-ads');
         queryClient.invalidateQueries('admin-all-ads');
         queryClient.invalidateQueries('admin-analytics');
-        toast.success('Ad approved successfully');
+        toast.success(t('admin.adApprovedSuccess'));
         setSelectedAd(null);
         setReviewNotes('');
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Failed to approve ad');
+        toast.error(error.response?.data?.message || t('admin.failedToApprove'));
       }
     }
   );
@@ -78,12 +80,12 @@ const AdminDashboard = () => {
         queryClient.invalidateQueries('admin-pending-ads');
         queryClient.invalidateQueries('admin-all-ads');
         queryClient.invalidateQueries('admin-analytics');
-        toast.success('Ad rejected successfully');
+        toast.success(t('admin.adRejectedSuccess'));
         setSelectedAd(null);
         setReviewNotes('');
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Failed to reject ad');
+        toast.error(error.response?.data?.message || t('admin.failedToReject'));
       }
     }
   );
@@ -94,8 +96,8 @@ const AdminDashboard = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <AlertTriangle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Access Denied</h1>
-          <p className="text-gray-600">You need admin privileges to access this page.</p>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">{t('admin.accessDenied')}</h1>
+          <p className="text-gray-600">{t('admin.adminPrivilegesRequired')}</p>
         </div>
       </div>
     );
@@ -103,7 +105,7 @@ const AdminDashboard = () => {
 
   const handleApprove = (ad) => {
     if (!reviewNotes.trim()) {
-      toast.error('Please provide review notes');
+      toast.error(t('admin.provideReviewNotes'));
       return;
     }
     approveAdMutation.mutate({ id: ad._id, reviewNotes });
@@ -111,7 +113,7 @@ const AdminDashboard = () => {
 
   const handleReject = (ad) => {
     if (!reviewNotes.trim()) {
-      toast.error('Please provide review notes');
+      toast.error(t('admin.provideReviewNotes'));
       return;
     }
     rejectAdMutation.mutate({ id: ad._id, reviewNotes });
@@ -141,9 +143,9 @@ const AdminDashboard = () => {
         <div className="mb-8">
           <div className="flex items-center space-x-3 mb-4">
             <Shield className="h-8 w-8 text-primary-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{t('admin.adminDashboard')}</h1>
           </div>
-          <p className="text-gray-600">Manage advertisements and monitor platform performance</p>
+          <p className="text-gray-600">{t('admin.managePlatform')}</p>
         </div>
 
         {/* Tabs */}
@@ -151,10 +153,10 @@ const AdminDashboard = () => {
           <div className="border-b border-gray-200">
             <nav className="flex space-x-8 px-6">
               {[
-                { id: 'pending', label: 'Pending Ads', icon: Clock, count: pendingAds.length },
-                { id: 'all', label: 'All Ads', icon: BarChart3 },
-                { id: 'places', label: 'Places', icon: MousePointer },
-                { id: 'analytics', label: 'Analytics', icon: TrendingUp }
+                { id: 'pending', label: t('admin.pendingAds'), icon: Clock, count: pendingAds.length },
+                { id: 'all', label: t('admin.allAds'), icon: BarChart3 },
+                { id: 'places', label: t('admin.places'), icon: MousePointer },
+                { id: 'analytics', label: t('admin.analytics'), icon: TrendingUp }
               ].map(tab => {
                 const Icon = tab.icon;
                 return (
@@ -386,7 +388,7 @@ const AllAdsTab = ({
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search ads..."
+              placeholder={t('admin.searchAds')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -400,11 +402,11 @@ const AllAdsTab = ({
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="active">Active</option>
-            <option value="paused">Paused</option>
-            <option value="rejected">Rejected</option>
+            <option value="">{t('admin.allStatus')}</option>
+            <option value="pending">{t('admin.pending')}</option>
+            <option value="active">{t('admin.active')}</option>
+            <option value="paused">{t('admin.paused')}</option>
+            <option value="rejected">{t('admin.rejected')}</option>
           </select>
         </div>
       </div>
@@ -415,22 +417,22 @@ const AllAdsTab = ({
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ad
+                {t('admin.ad')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Advertiser
+                {t('admin.advertiser')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Budget
+                {t('admin.budget')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Performance
+                {t('admin.performance')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
+                {t('admin.status')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Created
+                {t('admin.created')}
               </th>
             </tr>
           </thead>
@@ -511,7 +513,7 @@ const AnalyticsTab = ({ data, loading, formatCurrency }) => {
               <BarChart3 className="h-8 w-8 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Ads</p>
+              <p className="text-sm font-medium text-gray-500">{t('admin.totalAds')}</p>
               <p className="text-2xl font-semibold text-gray-900">{overview?.totalAds || 0}</p>
             </div>
           </div>
@@ -523,7 +525,7 @@ const AnalyticsTab = ({ data, loading, formatCurrency }) => {
               <Clock className="h-8 w-8 text-yellow-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Pending</p>
+              <p className="text-sm font-medium text-gray-500">{t('admin.pendingCount')}</p>
               <p className="text-2xl font-semibold text-gray-900">{overview?.pendingAds || 0}</p>
             </div>
           </div>
@@ -535,7 +537,7 @@ const AnalyticsTab = ({ data, loading, formatCurrency }) => {
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Active</p>
+              <p className="text-sm font-medium text-gray-500">{t('admin.activeCount')}</p>
               <p className="text-2xl font-semibold text-gray-900">{overview?.activeAds || 0}</p>
             </div>
           </div>
@@ -547,7 +549,7 @@ const AnalyticsTab = ({ data, loading, formatCurrency }) => {
               <DollarSign className="h-8 w-8 text-green-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Revenue</p>
+              <p className="text-sm font-medium text-gray-500">{t('admin.totalRevenue')}</p>
               <p className="text-2xl font-semibold text-gray-900">{formatCurrency(revenue?.totalRevenue || 0)}</p>
             </div>
           </div>
@@ -557,29 +559,29 @@ const AnalyticsTab = ({ data, loading, formatCurrency }) => {
       {/* Revenue Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Revenue Metrics</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">{t('admin.revenueMetrics')}</h3>
           <div className="space-y-4">
             <div className="flex justify-between">
-              <span className="text-gray-600">Total Revenue</span>
+              <span className="text-gray-600">{t('admin.totalRevenue')}</span>
               <span className="font-semibold">{formatCurrency(revenue?.totalRevenue || 0)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Average Revenue per Ad</span>
+              <span className="text-gray-600">{t('admin.averageRevenuePerAd')}</span>
               <span className="font-semibold">{formatCurrency(revenue?.averageRevenue || 0)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Total Impressions</span>
+              <span className="text-gray-600">{t('admin.totalImpressions')}</span>
               <span className="font-semibold">{(revenue?.totalImpressions || 0).toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Total Clicks</span>
+              <span className="text-gray-600">{t('admin.totalClicks')}</span>
               <span className="font-semibold">{(revenue?.totalClicks || 0).toLocaleString()}</span>
             </div>
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Top Advertisers</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">{t('admin.topAdvertisers')}</h3>
           <div className="space-y-3">
             {topAdvertisers?.slice(0, 5).map((advertiser, index) => (
               <div key={advertiser._id} className="flex items-center justify-between">
@@ -591,7 +593,7 @@ const AnalyticsTab = ({ data, loading, formatCurrency }) => {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">{advertiser.advertiser?.name}</p>
-                    <p className="text-xs text-gray-500">{advertiser.adCount} ads</p>
+                    <p className="text-xs text-gray-500">{advertiser.adCount} {t('admin.adsCount')}</p>
                   </div>
                 </div>
                 <div className="text-right">

@@ -24,8 +24,10 @@ import MenuManagement from '../components/restaurant/MenuManagement';
 import HangoutsManagement from '../components/restaurant/HangoutsManagement';
 import SubscriptionManagement from '../components/restaurant/SubscriptionManagement';
 import { toast } from 'react-hot-toast';
+import useTranslation from '../hooks/useTranslation';
 
 const RestaurantDashboard = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -65,16 +67,16 @@ const RestaurantDashboard = () => {
               <Settings size={48} className="mx-auto" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No Restaurants Found
+              {t('restaurant.noRestaurantsFound')}
             </h3>
             <p className="text-gray-600 mb-4">
-              Your account is not associated with any restaurants. Please contact support to set up your restaurant profile.
+              {t('restaurant.noRestaurantsMessage')}
             </p>
             <button
               onClick={() => window.location.href = 'mailto:support@foylekke.com'}
               className="w-full bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors"
             >
-              Contact Support
+              {t('restaurant.contactSupport')}
             </button>
           </div>
         </div>
@@ -83,11 +85,11 @@ const RestaurantDashboard = () => {
   }
 
   const tabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'menu', label: 'Menu Management', icon: MenuIcon },
-    { id: 'analytics', label: 'Analytics', icon: TrendingUp },
-    { id: 'hangouts', label: 'Hangouts', icon: Users },
-    { id: 'subscription', label: 'Subscription', icon: CreditCard }
+    { id: 'dashboard', label: t('restaurant.dashboard'), icon: BarChart3 },
+    { id: 'menu', label: t('restaurant.menuManagement'), icon: MenuIcon },
+    { id: 'analytics', label: t('restaurant.analytics'), icon: TrendingUp },
+    { id: 'hangouts', label: t('restaurant.hangouts'), icon: Users },
+    { id: 'subscription', label: t('restaurant.subscription'), icon: CreditCard }
   ];
 
   const formatCurrency = (amount) => {
@@ -139,7 +141,7 @@ const RestaurantDashboard = () => {
                 <Eye className="h-8 w-8 text-blue-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Views</p>
+                <p className="text-sm font-medium text-gray-500">{t('restaurant.totalViews')}</p>
                 <p className="text-2xl font-semibold text-gray-900">
                   {formatNumber(overview.totalViews || 0)}
                 </p>
@@ -162,13 +164,13 @@ const RestaurantDashboard = () => {
                 <Star className="h-8 w-8 text-yellow-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Average Rating</p>
+                <p className="text-sm font-medium text-gray-500">{t('restaurant.averageRating')}</p>
                 <p className="text-2xl font-semibold text-gray-900">
                   {(overview.averageRating || 0).toFixed(1)}
                 </p>
                 <div className="flex items-center text-sm">
                   <span className="text-gray-600">
-                    {overview.totalReviews || 0} reviews
+                    {overview.totalReviews || 0} {t('restaurant.reviews')}
                   </span>
                 </div>
               </div>
@@ -186,13 +188,13 @@ const RestaurantDashboard = () => {
                 <Users className="h-8 w-8 text-green-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Active Hangouts</p>
+                <p className="text-sm font-medium text-gray-500">{t('restaurant.activeHangouts')}</p>
                 <p className="text-2xl font-semibold text-gray-900">
                   {overview.activeHangouts || 0}
                 </p>
                 <div className="flex items-center text-sm">
                   <span className="text-gray-600">
-                    {overview.totalParticipants || 0} participants
+                    {overview.totalParticipants || 0} {t('restaurant.participants')}
                   </span>
                 </div>
               </div>
@@ -210,13 +212,13 @@ const RestaurantDashboard = () => {
                 <MenuIcon className="h-8 w-8 text-purple-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Menu Items</p>
+                <p className="text-sm font-medium text-gray-500">{t('restaurant.menuItems')}</p>
                 <p className="text-2xl font-semibold text-gray-900">
                   {overview.totalMenuItems || 0}
                 </p>
                 <div className="flex items-center text-sm">
                   <span className={`${overview.menuStatus === 'active' ? 'text-green-600' : 'text-red-600'}`}>
-                    {overview.menuStatus === 'active' ? 'Menu Active' : 'Menu Inactive'}
+                    {overview.menuStatus === 'active' ? t('restaurant.menuActive') : t('restaurant.menuInactive')}
                   </span>
                 </div>
               </div>
@@ -233,7 +235,7 @@ const RestaurantDashboard = () => {
             transition={{ delay: 0.4 }}
             className="bg-white p-6 rounded-lg shadow-sm"
           >
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Popular Dishes</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">{t('restaurant.popularDishes')}</h3>
             <div className="space-y-3">
               {topDishes.length > 0 ? topDishes.map((dish, index) => (
                 <div key={index} className="flex items-center justify-between">
@@ -245,7 +247,7 @@ const RestaurantDashboard = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium text-gray-900">
-                      {dish.views || 0} views
+                      {dish.views || 0} {t('restaurant.views')}
                     </p>
                     <p className="text-xs text-gray-500">
                       {formatCurrency(dish.price || 0)}
@@ -253,7 +255,7 @@ const RestaurantDashboard = () => {
                   </div>
                 </div>
               )) : (
-                <p className="text-gray-500 text-sm">No data available</p>
+                <p className="text-gray-500 text-sm">{t('restaurant.noRecentActivity')}</p>
               )}
             </div>
           </motion.div>
@@ -265,7 +267,7 @@ const RestaurantDashboard = () => {
             transition={{ delay: 0.5 }}
             className="bg-white p-6 rounded-lg shadow-sm"
           >
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">{t('restaurant.recentActivity')}</h3>
             <div className="space-y-3">
               {recentActivity.length > 0 ? recentActivity.map((activity, index) => (
                 <div key={index} className="flex items-start space-x-3">
@@ -278,7 +280,7 @@ const RestaurantDashboard = () => {
                   </div>
                 </div>
               )) : (
-                <p className="text-gray-500 text-sm">No recent activity</p>
+                <p className="text-gray-500 text-sm">{t('restaurant.noRecentActivity')}</p>
               )}
             </div>
           </motion.div>
@@ -290,7 +292,7 @@ const RestaurantDashboard = () => {
             transition={{ delay: 0.6 }}
             className="bg-white p-6 rounded-lg shadow-sm"
           >
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Upcoming Hangouts</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">{t('restaurant.upcomingHangouts')}</h3>
             <div className="space-y-3">
               {upcomingHangouts.length > 0 ? upcomingHangouts.map((hangout, index) => (
                 <div key={index} className="border-l-2 border-primary-500 pl-3">
@@ -301,11 +303,11 @@ const RestaurantDashboard = () => {
                   </div>
                   <div className="flex items-center text-xs text-gray-500">
                     <Users className="h-3 w-3 mr-1" />
-                    {hangout.participants} participants
+                    {hangout.participants} {t('restaurant.participants')}
                   </div>
                 </div>
               )) : (
-                <p className="text-gray-500 text-sm">No upcoming hangouts</p>
+                <p className="text-gray-500 text-sm">{t('restaurant.noUpcomingHangouts')}</p>
               )}
             </div>
           </motion.div>

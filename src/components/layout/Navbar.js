@@ -35,7 +35,6 @@ const Navbar = () => {
       { name: t('nav.home'), path: '/', icon: Home },
       { name: t('nav.places'), path: '/places', icon: MapPin },
       { name: t('nav.hangouts'), path: '/hangouts', icon: Users },
-      { name: t('nav.reviews'), path: '/reviews', icon: Star },
     ];
 
     if (!isAuthenticated) return baseItems;
@@ -86,18 +85,15 @@ const Navbar = () => {
       <nav className="bg-white shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2">
+            {/* Logo - Simplified */}
+            <Link to="/" className="flex items-center space-x-3">
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 className="w-10 h-10 bg-gradient-to-r from-primary-500 to-accent-500 rounded-lg flex items-center justify-center"
               >
                 <span className="text-white font-bold text-xl">FL</span>
               </motion.div>
-              <div className="hidden sm:block">
-                <h1 className="text-xl font-bold text-gradient">Foy Lekke</h1>
-                <p className="text-xs text-gray-500">{t('nav.tagline')}</p>
-              </div>
+              <h1 className="text-xl font-bold text-gradient">Foy Lekke</h1>
             </Link>
 
             {/* Desktop Navigation */}
@@ -133,30 +129,21 @@ const Navbar = () => {
               })}
             </div>
 
-            {/* Search, Demo Toggle, Language Selector and User Actions */}
-            <div className="flex items-center space-x-4">
-              {/* Demo Mode Toggle */}
-              <div className="hidden sm:block">
-                <DemoModeToggle />
-              </div>
-
-              {/* Language Selector */}
-              <div className="hidden sm:block">
-                <LanguageSelector />
-              </div>
-
+            {/* Streamlined Right Side - Primary Actions Only */}
+            <div className="flex items-center space-x-3">
               {/* Search Button */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsSearchOpen(true)}
                 className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-200"
+                title={t('nav.search')}
               >
                 <Search size={20} />
               </motion.button>
 
-              {/* Notifications */}
-              <NotificationBell />
+              {/* Notifications - Only for authenticated users */}
+              {isAuthenticated && <NotificationBell />}
 
               {/* User Menu */}
               {isAuthenticated ? (
@@ -231,6 +218,18 @@ const Navbar = () => {
                       {/* Divider */}
                       <div className="border-t border-gray-100 my-1"></div>
 
+                      {/* App Settings */}
+                      <div className="px-4 py-2">
+                        <p className="text-xs text-gray-500 mb-2">{t('nav.appSettings')}</p>
+                        <div className="space-y-2">
+                          <LanguageSelector />
+                          <DemoModeToggle />
+                        </div>
+                      </div>
+
+                      {/* Final Divider */}
+                      <div className="border-t border-gray-100 my-1"></div>
+
                       {/* Logout */}
                       <button
                         onClick={handleLogout}
@@ -243,19 +242,27 @@ const Navbar = () => {
                   )}
                 </div>
               ) : (
-                <div className="flex items-center space-x-2">
-                  <Link
-                    to="/login"
-                    className="px-4 py-2 text-gray-700 hover:text-primary-600 font-medium transition-colors duration-200"
-                  >
-                    {t('nav.login')}
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="btn-primary"
-                  >
-                    {t('nav.signUp')}
-                  </Link>
+                <div className="flex items-center space-x-3">
+                  {/* Language Selector for Non-authenticated Users */}
+                  <div className="hidden sm:block">
+                    <LanguageSelector />
+                  </div>
+                  
+                  {/* Authentication Actions */}
+                  <div className="flex items-center space-x-2">
+                    <Link
+                      to="/login"
+                      className="px-4 py-2 text-gray-700 hover:text-primary-600 font-medium transition-colors duration-200"
+                    >
+                      {t('nav.login')}
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="btn-primary"
+                    >
+                      {t('nav.signUp')}
+                    </Link>
+                  </div>
                 </div>
               )}
 
@@ -369,15 +376,20 @@ const Navbar = () => {
                       <span className="font-medium">{t('nav.settings')}</span>
                     </Link>
 
-                    {/* Demo Mode Toggle for Mobile */}
+                    {/* Divider */}
+                    <div className="border-t border-gray-200 my-2"></div>
+                    
+                    {/* App Settings for Mobile */}
                     <div className="px-3 py-2">
-                      <DemoModeToggle />
+                      <p className="text-xs text-gray-500 mb-3 uppercase tracking-wide">{t('nav.appSettings')}</p>
+                      <div className="space-y-3">
+                        <LanguageSelector />
+                        <DemoModeToggle />
+                      </div>
                     </div>
 
-                    {/* Language Selector for Mobile */}
-                    <div className="px-3 py-2">
-                      <LanguageSelector />
-                    </div>
+                    {/* Final Divider */}
+                    <div className="border-t border-gray-200 my-2"></div>
 
                     {/* Logout */}
                     <button
@@ -393,13 +405,13 @@ const Navbar = () => {
                 {/* Login/Register for non-authenticated users */}
                 {!isAuthenticated && (
                   <>
+                    {/* App Settings for Mobile - Non-authenticated */}
                     <div className="px-3 py-2">
-                      <DemoModeToggle />
-                    </div>
-                    
-                    {/* Language Selector for Mobile - Non-authenticated */}
-                    <div className="px-3 py-2">
-                      <LanguageSelector />
+                      <p className="text-xs text-gray-500 mb-3 uppercase tracking-wide">{t('nav.appSettings')}</p>
+                      <div className="space-y-3">
+                        <LanguageSelector />
+                        <DemoModeToggle />
+                      </div>
                     </div>
                     
                     <div className="border-t border-gray-200 my-2"></div>

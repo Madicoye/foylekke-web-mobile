@@ -12,6 +12,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import ReviewCard from './ReviewCard';
 import ReviewForm from './ReviewForm';
+import useTranslation from '../../hooks/useTranslation';
 
 const ReviewsList = ({ 
   placeId = null, 
@@ -23,6 +24,7 @@ const ReviewsList = ({
   emptyMessage = 'No reviews yet',
   compact = false
 }) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
@@ -71,14 +73,14 @@ const ReviewsList = ({
   // Delete review mutation
   const deleteReviewMutation = useMutation(reviewsAPI.deleteReview, {
     onSuccess: () => {
-      toast.success('Review deleted successfully');
+      toast.success(t('reviews.reviewDeletedSuccess'));
       queryClient.invalidateQueries(['reviews']);
       queryClient.invalidateQueries(['placeReviews']);
       queryClient.invalidateQueries(['myReviews']);
       queryClient.invalidateQueries(['place', placeId]);
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to delete review');
+      toast.error(error.response?.data?.message || t('reviews.failedToDelete'));
     }
   });
 
@@ -101,7 +103,7 @@ const ReviewsList = ({
   };
 
   const handleDeleteReview = (reviewId) => {
-    if (window.confirm('Are you sure you want to delete this review? This action cannot be undone.')) {
+    if (window.confirm(t('reviews.confirmDeleteReview'))) {
       deleteReviewMutation.mutate(reviewId);
     }
   };
@@ -126,7 +128,7 @@ const ReviewsList = ({
 
     return (
       <div className="bg-gray-50 rounded-lg p-4 mb-6">
-        <h4 className="font-medium text-gray-900 mb-3">Rating Breakdown</h4>
+        <h4 className="font-medium text-gray-900 mb-3">{t('reviews.ratingBreakdown')}</h4>
         <div className="space-y-2">
           {[5, 4, 3, 2, 1].map(rating => {
             const count = ratingBreakdown[rating] || 0;
@@ -161,7 +163,7 @@ const ReviewsList = ({
           className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
         >
           <FunnelIcon className="h-5 w-5" />
-          <span>Filters</span>
+          <span>{t('reviews.filters')}</span>
         </button>
         
         <div className="flex items-center space-x-4">
@@ -170,11 +172,11 @@ const ReviewsList = ({
             onChange={(e) => handleFilterChange('sortBy', e.target.value)}
             className="text-sm border border-gray-300 rounded-lg px-3 py-1 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           >
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-            <option value="highest">Highest Rated</option>
-            <option value="lowest">Lowest Rated</option>
-            <option value="helpful">Most Helpful</option>
+            <option value="newest">{t('reviews.newest')}</option>
+            <option value="oldest">{t('reviews.oldest')}</option>
+            <option value="highest">{t('reviews.highest')}</option>
+            <option value="lowest">{t('reviews.lowest')}</option>
+            <option value="helpful">{t('reviews.helpful')}</option>
           </select>
         </div>
       </div>
@@ -190,19 +192,19 @@ const ReviewsList = ({
             {/* Rating Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Minimum Rating
+                {t('reviews.sortBy')}
               </label>
               <select
                 value={filters.rating}
                 onChange={(e) => handleFilterChange('rating', e.target.value)}
                 className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
-                <option value="">Any Rating</option>
-                <option value="5">5 Stars</option>
-                <option value="4">4+ Stars</option>
-                <option value="3">3+ Stars</option>
-                <option value="2">2+ Stars</option>
-                <option value="1">1+ Stars</option>
+                <option value="">{t('reviews.allRatings')}</option>
+                <option value="5">5 {t('reviews.stars')}</option>
+                <option value="4">4+ {t('reviews.stars')}</option>
+                <option value="3">3+ {t('reviews.stars')}</option>
+                <option value="2">2+ {t('reviews.stars')}</option>
+                <option value="1">1+ {t('reviews.stars')}</option>
               </select>
             </div>
 
@@ -215,7 +217,7 @@ const ReviewsList = ({
                   onChange={(e) => handleFilterChange('withPhotos', e.target.checked)}
                   className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                 />
-                <span className="text-sm text-gray-700">With Photos</span>
+                <span className="text-sm text-gray-700">{t('reviews.withPhotos')}</span>
               </label>
             </div>
 
@@ -228,7 +230,7 @@ const ReviewsList = ({
                   onChange={(e) => handleFilterChange('verified', e.target.checked)}
                   className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                 />
-                <span className="text-sm text-gray-700">Verified Reviewers</span>
+                <span className="text-sm text-gray-700">{t('reviews.verifiedOnly')}</span>
               </label>
             </div>
           </motion.div>
@@ -241,7 +243,7 @@ const ReviewsList = ({
     return (
       <div className="text-center py-8">
         <ExclamationTriangleIcon className="h-12 w-12 text-red-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to load reviews</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">{t('reviews.failedToDelete')}</h3>
         <p className="text-gray-600">{error.message}</p>
       </div>
     );
@@ -267,7 +269,7 @@ const ReviewsList = ({
                   ))}
                 </div>
                 <span className="text-sm text-gray-600">
-                  {averageRating.toFixed(1)} ({totalReviews} review{totalReviews !== 1 ? 's' : ''})
+                  {averageRating.toFixed(1)} ({totalReviews} {totalReviews === 1 ? t('reviews.title').slice(0, -1) : t('reviews.title').toLowerCase()})
                 </span>
               </div>
             </div>
@@ -280,7 +282,7 @@ const ReviewsList = ({
             onClick={() => setShowReviewForm(true)}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
           >
-            Write Review
+            {t('reviews.writeReview')}
           </button>
         )}
       </div>
@@ -316,15 +318,15 @@ const ReviewsList = ({
           <h3 className="text-lg font-medium text-gray-900 mb-2">{emptyMessage}</h3>
           <p className="text-gray-600 mb-6">
             {allowWriteReview && user && !userHasReview
-              ? 'Be the first to share your experience!'
-              : 'Check back later for reviews from other users.'}
+              ? t('reviews.noReviewsMessage')
+              : t('reviews.noFilteredReviews')}
           </p>
           {allowWriteReview && user && !userHasReview && (
             <button
               onClick={() => setShowReviewForm(true)}
               className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
             >
-              Write the First Review
+              {t('reviews.writeReview')}
             </button>
           )}
         </div>
@@ -351,7 +353,7 @@ const ReviewsList = ({
             disabled={page === 1}
             className="px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Previous
+            {t('common.previous')}
           </button>
           
           <div className="flex space-x-1">
@@ -380,7 +382,7 @@ const ReviewsList = ({
             disabled={page === totalPages}
             className="px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Next
+            {t('common.next')}
           </button>
         </div>
       )}

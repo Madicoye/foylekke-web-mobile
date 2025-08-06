@@ -12,8 +12,10 @@ import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { hangoutsAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
+import useTranslation from '../../hooks/useTranslation';
 
 const HangoutMessaging = ({ hangoutId, isVisible = true }) => {
+  const { t, tc } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const messagesEndRef = useRef(null);
@@ -49,10 +51,10 @@ const HangoutMessaging = ({ hangoutId, isVisible = true }) => {
           type: 'text'
         }]);
         scrollToBottom();
-        toast.success('Message sent');
+        toast.success(t('hangouts.chat.messageSent'));
       },
       onError: (error) => {
-        toast.error('Failed to send message');
+        toast.error(t('hangouts.chat.failedToSend'));
       }
     }
   );
@@ -116,7 +118,7 @@ const HangoutMessaging = ({ hangoutId, isVisible = true }) => {
     const file = e.target.files[0];
     if (file) {
       // In a real app, you'd upload the file and send as attachment
-      toast.info('File upload not implemented in demo');
+      toast.info(t('hangouts.chat.fileUploadNotImplemented'));
     }
   };
 
@@ -159,10 +161,10 @@ const HangoutMessaging = ({ hangoutId, isVisible = true }) => {
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
             <div className="h-3 w-3 bg-green-500 rounded-full"></div>
-            <h3 className="font-semibold text-gray-900">Hangout Chat</h3>
+            <h3 className="font-semibold text-gray-900">{t('hangouts.chat.title')}</h3>
           </div>
           <span className="text-sm text-gray-500">
-            {messages.length} message{messages.length !== 1 ? 's' : ''}
+            {messages.length} {tc(messages.length, 'hangouts.chat.messages', 'hangouts.chat.messages_plural')}
           </span>
         </div>
         
@@ -170,7 +172,7 @@ const HangoutMessaging = ({ hangoutId, isVisible = true }) => {
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="p-1 text-gray-400 hover:text-gray-600 rounded"
-            title={isExpanded ? 'Minimize' : 'Expand'}
+            title={isExpanded ? t('hangouts.chat.minimize') : t('hangouts.chat.expand')}
           >
             {isExpanded ? (
               <XMarkIcon className="h-5 w-5" />
@@ -258,7 +260,7 @@ const HangoutMessaging = ({ hangoutId, isVisible = true }) => {
               <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
               <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
             </div>
-            <span className="text-sm">Someone is typing...</span>
+            <span className="text-sm">{t('hangouts.chat.typing')}</span>
           </motion.div>
         )}
         
@@ -273,7 +275,7 @@ const HangoutMessaging = ({ hangoutId, isVisible = true }) => {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
-            title="Attach file"
+            title={t('hangouts.chat.attachFile')}
           >
             <PhotoIcon className="h-5 w-5" />
           </button>
@@ -291,7 +293,7 @@ const HangoutMessaging = ({ hangoutId, isVisible = true }) => {
               type="text"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type a message..."
+              placeholder={t('hangouts.chat.inputPlaceholder')}
               className="w-full px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
               maxLength={500}
             />
@@ -300,8 +302,8 @@ const HangoutMessaging = ({ hangoutId, isVisible = true }) => {
             <button
               type="button"
               className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded"
-              title="Add emoji"
-              onClick={() => toast.info('Emoji picker not implemented in demo')}
+              title={t('hangouts.chat.addEmoji')}
+              onClick={() => toast.info(t('hangouts.chat.emojiPickerNotImplemented'))}
             >
               <FaceSmileIcon className="h-5 w-5" />
             </button>
@@ -314,7 +316,7 @@ const HangoutMessaging = ({ hangoutId, isVisible = true }) => {
             type="submit"
             disabled={!message.trim() || sendMessageMutation.isLoading}
             className="p-2 bg-primary-600 text-white rounded-full hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            title="Send message"
+            title={t('hangouts.chat.sendMessage')}
           >
             <PaperAirplaneIcon className="h-5 w-5" />
           </motion.button>
@@ -323,7 +325,7 @@ const HangoutMessaging = ({ hangoutId, isVisible = true }) => {
         {/* Character count */}
         <div className="mt-2 text-right">
           <span className="text-xs text-gray-500">
-            {message.length}/500
+            {message.length}/500 {t('hangouts.chat.charactersCount')}
           </span>
         </div>
       </form>
